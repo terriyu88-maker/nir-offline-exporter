@@ -93,6 +93,11 @@
 **/go.work
 **/Cargo.lock
 
+# Mesa MinGW cross-build artifacts
+third_party/mesa/build-mingw/
+out/*.exe
+out/*.dll
+
 # Ruby
 *.gem
 *.rbc
