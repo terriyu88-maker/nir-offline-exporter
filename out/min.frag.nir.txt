@@ -16,7 +16,6 @@ impl main {
     32x4  %3 = fmul %1, %2 (0.500000, 0.500000, 0.500000, 0.500000)
     32    %4 = deref_var &o_color (shader_out vec4)
                @store_deref (%4, %3) (wrmask=xyzw, access=none)
-               return
                // succs: b1
     block b1:
 }

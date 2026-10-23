@@ -52,18 +52,23 @@ meson setup build-mingw \
 ninja -C build-mingw src/compiler/spirv/spirv2nir.exe -j2
 ```
 
-Smoke with Wine:
+Smoke with Wine (`WINEPREFIX` plus `libwinpthread-1.dll` next to the exe):
 
 ```bash
+cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll \
+  third_party/mesa/build-mingw/src/compiler/spirv/
 glslangValidator -V -S frag -o shaders/min.frag.spv shaders/min.frag
-wine64 third_party/mesa/build-mingw/src/compiler/spirv/spirv2nir.exe shaders/min.frag.spv
+WINEPREFIX=/tmp/wine-spirv2nir PATH="/usr/lib/wine:$PATH" \
+  wine64 third_party/mesa/build-mingw/src/compiler/spirv/spirv2nir.exe shaders/min.frag.spv
 ```
+
+`--lower-io` is contrast-only: after L1 it runs `nir_lower_io` on shader in/out so the dump can be diffed against the default deref IO.
 
 ## Local patches on Mesa 26.2.5
 
-- `src/compiler/spirv/spirv2nir.c`: `fopen`/`fread` instead of POSIX `mmap`
+- `src/compiler/spirv/spirv2nir.c`: `fopen`/`fread` instead of POSIX `mmap`; always runs the L1 pass list then `nir_validate_shader()`; `--lower-io` is contrast-only
 - `meson.build`: `tools=nir` forces full NIR (`with_gfx_compute`), so `libnir` is not the stub
 
 ## Status
 
-Stage 0 done: PE32+ `spirv2nir.exe` dumps generic NIR. Next: fixed L1 pass list (stage 1).
+Stage 1 done: fixed L1 passes, Wine twice-dump identical, `fmul` present, `--lower-io` diffs to `@load_input` / `@store_output`. Next: stage 2 walker + private IR printer.

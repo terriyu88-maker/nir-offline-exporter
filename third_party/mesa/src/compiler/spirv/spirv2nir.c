@@ -67,6 +67,57 @@ stage_to_abbrev(mesa_shader_stage stage)
    return "UNKNOWN";
 }
 
+static unsigned
+io_type_size_vec4(const struct glsl_type *type, bool bindless)
+{
+   (void)bindless;
+   return glsl_count_attribute_slots(type, false);
+}
+
+/* Generic NIR (L1): inline + SSA-preserving opts. No nir_lower_io, source
+ * mods, nir_convert_from_ssa, or driver *_nir_lower_*.
+ */
+static void
+run_l1_passes(nir_shader *nir)
+{
+   UNUSED bool _;
+   bool progress;
+
+   NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
+   NIR_PASS(_, nir, nir_lower_returns);
+   NIR_PASS(_, nir, nir_inline_functions);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
+   NIR_PASS(_, nir, nir_opt_deref);
+
+   nir_remove_non_entrypoints(nir);
+
+   NIR_PASS(_, nir, nir_lower_variable_initializers, ~0);
+
+   do {
+      progress = false;
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_deref);
+      NIR_PASS(progress, nir, nir_opt_dce);
+      NIR_PASS(progress, nir, nir_opt_cse);
+      NIR_PASS(progress, nir, nir_opt_algebraic);
+      NIR_PASS(progress, nir, nir_opt_constant_folding);
+      NIR_PASS(progress, nir, nir_opt_dead_cf);
+      NIR_PASS(progress, nir, nir_opt_loop);
+   } while (progress);
+
+   nir_validate_shader(nir, "after L1 passes");
+}
+
+static void
+run_lower_io_contrast(nir_shader *nir)
+{
+   UNUSED bool _;
+   NIR_PASS(_, nir, nir_lower_io,
+            nir_var_shader_in | nir_var_shader_out,
+            io_type_size_vec4, (nir_lower_io_options)0);
+   nir_validate_shader(nir, "after nir_lower_io contrast");
+}
+
 static void
 print_usage(char *exec_name, FILE *f)
 {
@@ -80,7 +131,11 @@ print_usage(char *exec_name, FILE *f)
            "  -e, --entry <name>      Specify the entry-point name.\n"
            "  -g, --opengl            Use OpenGL environment instead of Vulkan for\n"
            "                          graphics stages.\n"
-           "  --optimize              Run basic NIR optimizations in the result.\n"
+           "  --optimize              Extra NIR opts after the fixed L1 pass list.\n"
+           "  --lower-io              Contrast only: run nir_lower_io on in/out after L1.\n"
+           "\n"
+           "L1 (always): lower temp initializers, returns, inline, copy_prop/deref,\n"
+           "dce/cse, algebraic/constant_folding, dead_cf/loop. Then validate and dump.\n"
            "\n"
            "Passing the stage and the entry-point name is optional unless there's\n"
            "ambiguity, in which case the program will print the entry-points\n"
@@ -175,6 +230,7 @@ int main(int argc, char **argv)
    };
    int ch;
    bool optimize = false;
+   bool lower_io = false;
    enum nir_spirv_execution_environment env = NIR_SPIRV_VULKAN;
 
    static struct option long_options[] =
@@ -184,6 +240,7 @@ int main(int argc, char **argv)
          {"entry",    required_argument, 0, 'e'},
          {"opengl",   no_argument,       0, 'g'},
          {"optimize", no_argument,       0, 'O'},
+         {"lower-io", no_argument,       0, 'L'},
          {0, 0,                          0, 0}
       };
 
@@ -210,6 +267,9 @@ int main(int argc, char **argv)
          break;
       case 'O':
          optimize = true;
+         break;
+      case 'L':
+         lower_io = true;
          break;
       default:
          fprintf(stderr, "Unrecognized option \"%s\".\n", optarg);
@@ -289,6 +349,8 @@ int main(int argc, char **argv)
                                   &spirv_opts, &nir_opts);
 
    if (nir) {
+      run_l1_passes(nir);
+
       if (optimize) {
          bool progress;
          do {
@@ -319,7 +381,13 @@ int main(int argc, char **argv)
 
             #undef OPT
          } while (progress);
+
+         nir_validate_shader(nir, "after --optimize");
       }
+
+      if (lower_io)
+         run_lower_io_contrast(nir);
+
       nir_print_shader(nir, stdout);
    } else {
       fprintf(stderr, "SPIRV to NIR compilation failed\n");
