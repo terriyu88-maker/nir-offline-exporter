@@ -11,8 +11,10 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `third_party/mesa/` | Mesa 26.2.5 sources + MinGW cross file |
 | `.monkeycode/docs/mesa-nir-architecture.md` | Mesa / compiler / NIR dump notes |
 | `.monkeycode/specs/nir-offline-exporter/tasklist.md` | Staged plan |
-| `shaders/min.frag` | Minimal Vulkan fragment used for smoke |
+| `shaders/min.frag` | Golden 1: ALU fragment |
+| `shaders/tex.frag` | Golden 2: 2D texture sample |
 | `out/min.frag.nir.txt` | Sample `nir_print_shader()` dump |
+| `out/tex.frag.nir.txt` | Golden 2 Mesa dump |
 
 ## Cross-build (Linux → Windows PE)
 
@@ -71,4 +73,4 @@ WINEPREFIX=/tmp/wine-spirv2nir PATH="/usr/lib/wine:$PATH" \
 
 ## Status
 
-Stage 1 done: fixed L1 passes, Wine twice-dump identical, `fmul` present, `--lower-io` diffs to `@load_input` / `@store_output`. Next: stage 2 walker + private IR printer.
+Stage 2 golden 1–2 done: `--emit ours` reprints the same text as `nir_print_shader()` on `shaders/min.frag.spv` and `shaders/tex.frag.spv` (`diff` empty). Covered: `deref_var`, `@load_deref`, `load_const`, `fmul`, `@store_deref`, `(float32)tex` with texture/sampler deref. Phi / Undef remain placeholders. Next: golden 3–5 (UBO / if-loop / SSBO), then stage 3 JSON.

@@ -11,6 +11,7 @@
 
 #include "nir.h"
 #include "nir_spirv.h"
+#include "own_ir/ir.h"
 #include "spirv.h"
 #include "util/u_dynarray.h"
 #include "vtn_private.h"
@@ -133,6 +134,7 @@ print_usage(char *exec_name, FILE *f)
            "                          graphics stages.\n"
            "  --optimize              Extra NIR opts after the fixed L1 pass list.\n"
            "  --lower-io              Contrast only: run nir_lower_io on in/out after L1.\n"
+           "  --emit <fmt>            Dump format: mesa (default) or ours.\n"
            "\n"
            "L1 (always): lower temp initializers, returns, inline, copy_prop/deref,\n"
            "dce/cse, algebraic/constant_folding, dead_cf/loop. Then validate and dump.\n"
@@ -231,6 +233,7 @@ int main(int argc, char **argv)
    int ch;
    bool optimize = false;
    bool lower_io = false;
+   enum own_ir_emit emit = OWN_IR_EMIT_MESA;
    enum nir_spirv_execution_environment env = NIR_SPIRV_VULKAN;
 
    static struct option long_options[] =
@@ -241,6 +244,7 @@ int main(int argc, char **argv)
          {"opengl",   no_argument,       0, 'g'},
          {"optimize", no_argument,       0, 'O'},
          {"lower-io", no_argument,       0, 'L'},
+         {"emit",     required_argument, 0, 'E'},
          {0, 0,                          0, 0}
       };
 
@@ -270,6 +274,17 @@ int main(int argc, char **argv)
          break;
       case 'L':
          lower_io = true;
+         break;
+      case 'E':
+         if (!strcmp(optarg, "mesa")) {
+            emit = OWN_IR_EMIT_MESA;
+         } else if (!strcmp(optarg, "ours")) {
+            emit = OWN_IR_EMIT_OURS;
+         } else {
+            fprintf(stderr, "Unknown --emit \"%s\" (mesa|ours)\n", optarg);
+            print_usage(argv[0], stderr);
+            return 1;
+         }
          break;
       default:
          fprintf(stderr, "Unrecognized option \"%s\".\n", optarg);
@@ -388,7 +403,10 @@ int main(int argc, char **argv)
       if (lower_io)
          run_lower_io_contrast(nir);
 
-      nir_print_shader(nir, stdout);
+      if (emit == OWN_IR_EMIT_OURS)
+         own_ir_print_shader(nir, stdout);
+      else
+         nir_print_shader(nir, stdout);
    } else {
       fprintf(stderr, "SPIRV to NIR compilation failed\n");
    }

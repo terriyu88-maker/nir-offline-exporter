@@ -127,6 +127,71 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 - `nir_validate_shader` 通过
 - 未覆盖指令类型允许白名单，白名单必须写进报告；黄金件覆盖到的类型白名单必须清零
 
+**落点：** 自有代码放在 `third_party/mesa/src/compiler/spirv/own_ir/`，编进同一 `spirv2nir.exe`。调用点只改 `spirv2nir.c`。
+
+**对照物：** 黄金件 1 是 `shaders/min.frag` 经 L1 后的 dump（`out/min.frag.nir.txt`）。当前指令：`deref_var`、`@load_deref`、`load_const`、`fmul`、`@store_deref`。`nir_lower_returns` 之后这块没有 `return`。
+
+**CLI：** `spirv2nir shader.spv` 仍是 Mesa 文本；`spirv2nir shader.spv --emit ours` 是自有打印机。阶段 3 的 json 接到同一个 `--emit`。
+
+先把黄金件 1 打到 `diff` 为空，再按黄金件 2–5 补 Tex / UBO / if-loop / SSBO。
+
+#### 阶段 2 细化任务
+
+- [x] 1. 落点与构建
+  - [x] 1.1 新建 `own_ir/`：`ir.h` `ir.c` `walk.c` `print.c`
+  - [x] 1.2 `meson.build` 把上述文件加入 `spirv2nir` 可执行文件源
+  - [x] 1.3 `spirv2nir.c` 增加 `--emit ours`（默认仍走 Mesa 打印机）
+  - [x] 1.4 MinGW 重编，Wine `--help` 能看到该选项
+
+- [x] 2. 自有 IR 结构（只建模 dump 用到的字段）
+  - [x] 2.1 Module：stage、blake3、name、subgroup 范围、`origin_upper_left`、Mesa `26.2.5`
+  - [x] 2.2 Variable：mode、interp、type、name、location、location_frac、component mask
+  - [x] 2.3 Function / Block：名字、entrypoint、preds/succs、指令列表
+  - [x] 2.4 Value：SSA id、bit_size、num_components
+  - [x] 2.5 Instr：Alu / Deref / Intrinsic / LoadConst / Jump / Unimplemented（Tex / Phi / Undef 先占位）
+
+- [x] 3. 遍历器骨架
+  - [x] 3.1 L1 + `nir_validate_shader` 之后、`nir_print_shader` 之前调用 `nir_index_ssa_defs`（与 Mesa 打印机同一套 `%id`）
+  - [x] 3.2 按 `nir_print.c` 顺序走：shader info → 变量（in/out 按 location 0–127，再 `location_frac`）→ `foreach_list` 函数 → 块 → 指令
+  - [x] 3.3 未实现的 `nir_instr_type` 记 Unimplemented 并计数，打印一行可检索标记
+  - [x] 3.4 黄金件 1 上 Unimplemented 计数必须为 0
+
+- [x] 4. 打印机：shader 头
+  - [x] 4.1 对齐 `print_shader_info`：`shader:` / `source_blake3:` / `name:` / subgroup / `origin_upper_left`
+  - [x] 4.2 `inputs`/`outputs`/`uniforms`/`scratch` 仅非零才打印
+  - [x] 4.3 Wine：头与 Mesa dump 一致（可先忽略变量和指令体）
+
+- [x] 5. 打印机：变量与函数声明
+  - [x] 5.1 `decl_var` 对齐黄金件 1 两行 in/out（含 `INTERP_MODE_NONE`、`VARYING_SLOT_VAR0`、`FRAG_RESULT_DATA0`、`.xyzw`）
+  - [x] 5.2 `decl_function main () (entrypoint)` 后空行，再 `impl main {`
+
+- [x] 6. 打印机：CFG
+  - [x] 6.1 `block bN:`、`// preds:`、块尾 `// succs: bM`
+  - [x] 6.2 黄金件 1：`b0` 无前驱、后继 `b1`；空块 `b1`
+
+- [x] 7. 指令：LoadConst / Deref / ALU / Intrinsic
+  - [x] 7.1 `load_const`：hex + 十进制内联，格式对齐 `%2` 那行
+  - [x] 7.2 `deref_var &name (shader_in/out type)`，含 bit 宽前缀 `32    %0`
+  - [x] 7.3 ALU：`fmul`、src SSA、常量源内联 `(0.500000, ...)`、`32x4` 前缀
+  - [x] 7.4 `@load_deref` / `@store_deref`：`access=none`、`wrmask=xyzw`；store 无 SSA dest
+  - [x] 7.5 缩进、空格、空行与 `nir_print.c` 逐字符对齐
+
+- [x] 8. Jump（占位，黄金件 1 可不出现）
+  - [x] 8.1 映射 `nir_jump_return` 等，打印 `return`
+  - [x] 8.2 黄金件 1 当前无 jump，有则必须与 Mesa 一致
+
+- [x] 9. 检查点：黄金件 1
+  - [x] 9.1 Wine 两次：默认 dump → `a.nir.txt`；`--emit ours` → `b.nir.txt`
+  - [x] 9.2 `diff -u a.nir.txt b.nir.txt` 为空
+  - [x] 9.3 报告：黄金件 1 覆盖的类型白名单清零；Tex/Phi/Undef 可留白名单
+
+- [x] 10. 检查点：黄金件 2（纹理采样 FS）
+  - [x] 10.1 `shaders/tex.frag`：`texture(sampler2D, uv)` 经 `glslangValidator -V`
+  - [x] 10.2 walker 填 `nir_tex_instr`：op、dest_type、src（ssa + `src_type`）、sampler_dim、index/non-uniform/tg4
+  - [x] 10.3 打印机对齐 `print_tex_instr`：`(float32)tex %0 (texture_deref), %0 (sampler_deref), %2 (coord), 2D`
+  - [x] 10.4 `decl_var` access 按 Mesa 位名打印（黄金件 2 的 `restrict`）
+  - [x] 10.5 Wine：`tex.frag.spv` 与 `min.frag.spv` 的默认 dump vs `--emit ours`，`diff` 均为空
+
 ### 阶段 3：JSON 导出（对照格式）
 
 **做：**
