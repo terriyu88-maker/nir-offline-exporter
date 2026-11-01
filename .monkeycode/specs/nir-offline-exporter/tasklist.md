@@ -2,7 +2,7 @@
 
 ## 1. 目标
 
-在 Windows 上交付一个离线工具：接受 SPIR-V（GLSL 经 glslang 转为 SPIR-V 后进入同一路径），调用 Mesa 的 `spirv_to_nir()`，在硬件无关层（generic NIR / L1）立刻遍历内存中的 `nir_shader`，映射到自有 IR，再导出 JSON / 自有二进制。
+在 Windows 上交付一个离线工具：接受 SPIR-V（GLSL 经 glslang 转为 SPIR-V 后进入同一路径），调用 Mesa 的 `spirv_to_nir()`，在硬件无关层（generic NIR / L1）立刻遍历内存中的 `nir_shader`，映射到自有 IR（进程内内存形式）。JSON 仅为对照导出，不实现自有二进制存储格式。
 
 **自有 IR 的主验收目标：** 对自有 IR 再打印一遍，文本与 `nir_print_shader()` 的 NIR dump 一致。打印内容对齐即视为映射做对。
 
@@ -12,11 +12,10 @@
                          |
                          +--> nir_print_shader()              --> a.nir.txt
                          |
-                         +--> 遍历 --> 自有 IR --> 自有打印机 --> b.nir.txt
-                         |                 |
-                         |                 +--> JSON
-                         |                 +--> 自有二进制
-                         |
+                          +--> 遍历 --> 自有 IR（内存）--> 自有打印机 --> b.nir.txt
+                          |                 |
+                          |                 +--> JSON（对照）
+                          |
                          diff a.nir.txt b.nir.txt  == 空
 ```
 
@@ -29,7 +28,7 @@
 - 钉死 Mesa git tag、shader stage、Vulkan 语义。
 - 打印机按 NIR 的遍历顺序走：函数声明序 → 块列表序 → 指令列表序。SSA id 与 `nir_print_shader` 同一套编号规则。
 - 每个阶段有独立可运行产物，过验收再进下一阶段。
-- 编译环境：Linux 上 MinGW 交叉编译，产出 Windows PE（`spirv2nir.exe`）。本机不搭 VS。阶段 0–4 用 Wine 冒烟；干净 Win10/11 实机验收放到阶段 5。
+- 编译环境：Linux 上 MinGW 交叉编译，产出 Windows PE（`spirv2nir.exe`）。本机不搭 VS。阶段 0–3 用 Wine 冒烟；干净 Win10/11 实机验收放到阶段 4。
 
 ## 3. 分阶段实施
 
@@ -240,26 +239,7 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 - [x] 2. JSON 读回 → 自有 IR → 自有打印机，与 dump `diff` 空
 - [x] 3. 黄金件 JSON 入库
 
-### 阶段 4：自有二进制（存储格式）
-
-**做：**
-
-- 选 FlatBuffers 或手写 TLV，字段与 JSON 同构
-- 自带 `version` + `mesa_git`
-- 提供 `encode` / `decode`，decode 回到阶段 2 同一套结构
-- CLI：`spirv2nir shader.spv --emit bin -o shader.nirbin`
-- 解码器可独立于 Mesa 运行时（静态链或独立小库）
-
-**产物：** `shader.nirbin` + 编解码库
-
-**验收：**
-
-- `encode(ir) → decode → encode` 字节级一致
-- `decode → 自有打印机` 的文本仍与原始 NIR dump 一致
-- 故意改 `mesa_git` / `version` 必须拒绝加载
-- 不依赖 Mesa 运行时即可 decode
-
-### 阶段 5：GLSL 入口与 Windows 分发
+### 阶段 4：GLSL 入口与 Windows 分发
 
 **做：**
 
@@ -267,8 +247,8 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 - `.spv` 直接走
 - 静态链 MinGW 运行时（`-static` 或带上 `libgcc_s_seh-1.dll` / `libwinpthread-1.dll` / `libstdc++-6.dll`）
 - 打包 zip：`spirv2nir.exe` + 必要 MinGW DLL + `glslangValidator.exe`（或写明需 Vulkan SDK）
-- CLI 支持 `--emit text|json|bin`
-- 阶段 0–4 继续用 Wine 回归；本阶段用一台干净 Win10/11 或 CI `windows-latest` 做实机验收
+- CLI 支持 `--emit mesa|ours|json`
+- 阶段 0–3 继续用 Wine 回归；本阶段用一台干净 Win10/11 或 CI `windows-latest` 做实机验收
 
 **产物：** Windows 分发包
 
@@ -276,12 +256,34 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 
 - 同一份 GLSL：`glslang → spirv2nir` 的 NIR dump 与自有 IR 打印文本一致
 - Wine 与干净 Win10/11（无 Mesa 源码、无 VS）都能跑黄金件
-- `--emit text|json|bin` 三种输出都可用
+- `--emit mesa|ours|json` 三种输出都可用
 - `ldd`/`objdump -p` 确认未链 Linux 系统库
+
+#### 阶段 4 细化任务
+
+- [x] 1. GLSL 入口
+  - [x] 1.1 按扩展名分流：`.spv` 直接读；`.vert/.frag/.comp/.tesc/.tese/.geom/.mesh/.task` 先交给 glslang
+  - [x] 1.2 未给 `--stage` 时从扩展名推断 Mesa stage 与 glslang `-S`
+  - [x] 1.3 查找 `glslangValidator.exe` / `glslang.exe`：环境变量 `GLSLANG_VALIDATOR`、与 `spirv2nir.exe` 同目录、再 PATH
+  - [x] 1.4 Windows `CreateProcess`：`glslangValidator -V -S <stage> -o <temp.spv> <file>`，失败时打印退出码
+  - [x] 1.5 临时 `.spv` 走现有 `spirv_to_nir` + L1，用完删除
+  - [x] 1.6 Wine：黄金件 `.spv` 回归；无 glslang 时 `.frag` 报错清晰；有 `glslang.exe` 时同一份 GLSL 与对应 `.spv` 的 dump 一致（`source_blake3` 因 SPIR-V 字节不同可不同）
+
+- [x] 2. 检查点：`--emit mesa|ours|json`
+  - [x] 2.1 Wine 黄金件 1–5：三种 emit 仍可用
+  - [x] 2.2 `--emit ours` vs Mesa dump `diff` 空
+
+- [x] 3. MinGW 运行时 DLL
+  - [x] 3.1 `objdump -p` 列出 PE 依赖
+  - [x] 3.2 随包复制所需 DLL（当前有 `libwinpthread-1.dll`）；确认无 Linux 系统库
+
+- [x] 4. 分发包与文档
+  - [x] 4.1 `scripts/pack-windows.sh` 产出 `dist/spirv2nir/`：exe + DLL，并写明需 Vulkan SDK / `glslangValidator.exe`
+  - [x] 4.2 README 更新 GLSL 用法与分发说明
 
 ## 4. 黄金件与回归
 
-最少 5 个输入，全部同时出 `nir.txt`（Mesa 打印）和 `ours.txt`（自有 IR 打印），CI 对这两份做 diff。JSON / 二进制由自有 IR 再导出，decode 后仍须打出与 `nir.txt` 相同的文本。
+最少 5 个输入，全部同时出 `nir.txt`（Mesa 打印）和 `ours.txt`（自有 IR 打印），CI 对这两份做 diff。JSON 由内存中的自有 IR 再导出，读回后仍须打出与 `nir.txt` 相同的文本。
 
 1. 纯 ALU fragment（`color * 0.5` 的 Vulkan 写法）
 2. 带纹理采样的 FS
@@ -289,7 +291,7 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 4. 带分支/循环的 FS
 5. 带 SSBO/原子的 CS
 
-文本允许的唯一差异：无。SSA 编号必须与 `nir_print_shader` 一致，因此遍历顺序固定。JSON/二进制必须稳定编号。
+文本允许的唯一差异：无。SSA 编号必须与 `nir_print_shader` 一致，因此遍历顺序固定。JSON 必须稳定编号。
 
 每次改遍历器、打印机或 schema，跑黄金件 diff。
 
@@ -300,15 +302,15 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 | 0 交叉编出 exe | 2–4 天 | MinGW cross file / Wine 冒烟 |
 | 1 generic dump | 1–2 天 | pass 列表取舍 |
 | 2 遍历 + 自有 IR + 打印机 | 3–5 天 | intrinsic/tex/deref 种类多 |
-| 3 JSON | 2–3 天 | schema 稳定 |
-| 4 自有二进制 | 3–5 天 | 版本兼容 |
-| 5 GLSL + 打包 | 1–2 天 | 运行时 DLL |
+| 3 JSON（对照） | 2–3 天 | schema 稳定 |
+| 4 GLSL + 打包 | 1–2 天 | 运行时 DLL |
 
 阶段 2 是风险点。先把黄金件 1 打通（纯 ALU，`diff` 为空），再按指令类型补，不要一上来求全覆盖。
 
 ## 6. 明确不做
 
 - 不解析 `nir_serialize()` 二进制
+- 不实现自有二进制存储格式（FlatBuffers / TLV / `--emit bin`）；交付物停在进程内自有 IR，JSON 仅为对照
 - 不把 NIR 降到具体 GPU 后端
 - 不在本计划内实现硬件指令选择 / 寄存器分配
 - 不把 OpenGL compatibility GLSL 直接喂给 `glsl_to_nir`（GLSL 统一经 glslang 走 Vulkan SPIR-V）

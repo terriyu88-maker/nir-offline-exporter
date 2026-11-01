@@ -22,6 +22,19 @@
 #include <string.h>
 #include <getopt.h>
 
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
+#ifndef _WIN32
+#ifndef MAX_PATH
+#define MAX_PATH 4096
+#endif
+#endif
+
 #define WORD_SIZE 4
 
 struct {
@@ -138,13 +151,213 @@ print_usage(char *exec_name, FILE *f)
             "  --from-json             Read own_ir JSON and reprint with the own printer.\n"
             "  -o, --output <file>     Write dump to file instead of stdout.\n"
            "\n"
+           "Input is SPIR-V (.spv) or GLSL (.vert/.frag/.comp/.tesc/.tese/.geom/.mesh/.task).\n"
+           "GLSL is compiled with glslangValidator -V (or glslang.exe). Override\n"
+           "with GLSLANG_VALIDATOR, or place the tool next to this program.\n"
+           "\n"
            "L1 (always): lower temp initializers, returns, inline, copy_prop/deref,\n"
            "dce/cse, algebraic/constant_folding, dead_cf/loop. Then validate and dump.\n"
            "\n"
            "Passing the stage and the entry-point name is optional unless there's\n"
            "ambiguity, in which case the program will print the entry-points\n"
            "available.",
-           exec_name);
+            exec_name);
+}
+
+static bool
+has_suffix_ci(const char *path, const char *suffix)
+{
+   size_t n = strlen(path);
+   size_t m = strlen(suffix);
+   if (n < m)
+      return false;
+   return strcasecmp(path + n - m, suffix) == 0;
+}
+
+static mesa_shader_stage
+stage_from_filename(const char *path)
+{
+   if (has_suffix_ci(path, ".vert"))
+      return MESA_SHADER_VERTEX;
+   if (has_suffix_ci(path, ".frag"))
+      return MESA_SHADER_FRAGMENT;
+   if (has_suffix_ci(path, ".comp"))
+      return MESA_SHADER_COMPUTE;
+   if (has_suffix_ci(path, ".tesc"))
+      return MESA_SHADER_TESS_CTRL;
+   if (has_suffix_ci(path, ".tese"))
+      return MESA_SHADER_TESS_EVAL;
+   if (has_suffix_ci(path, ".geom"))
+      return MESA_SHADER_GEOMETRY;
+   if (has_suffix_ci(path, ".mesh"))
+      return MESA_SHADER_MESH;
+   if (has_suffix_ci(path, ".task"))
+      return MESA_SHADER_TASK;
+   return MESA_SHADER_NONE;
+}
+
+static const char *
+stage_to_glslang(mesa_shader_stage stage)
+{
+   switch (stage) {
+   case MESA_SHADER_VERTEX:
+      return "vert";
+   case MESA_SHADER_TESS_CTRL:
+      return "tesc";
+   case MESA_SHADER_TESS_EVAL:
+      return "tese";
+   case MESA_SHADER_GEOMETRY:
+      return "geom";
+   case MESA_SHADER_FRAGMENT:
+      return "frag";
+   case MESA_SHADER_COMPUTE:
+      return "comp";
+   case MESA_SHADER_TASK:
+      return "task";
+   case MESA_SHADER_MESH:
+      return "mesh";
+   default:
+      return NULL;
+   }
+}
+
+static bool
+path_is_readable(const char *path)
+{
+   FILE *f = fopen(path, "rb");
+   if (!f)
+      return false;
+   fclose(f);
+   return true;
+}
+
+#ifdef _WIN32
+static char *
+find_glslang_validator(void)
+{
+   char buf[MAX_PATH];
+   const char *env = getenv("GLSLANG_VALIDATOR");
+   if (env && env[0]) {
+      if (path_is_readable(env))
+         return strdup(env);
+      fprintf(stderr, "GLSLANG_VALIDATOR is set but not readable: %s\n", env);
+      return NULL;
+   }
+
+   if (GetModuleFileNameA(NULL, buf, MAX_PATH) > 0) {
+      char *slash = strrchr(buf, '\\');
+      if (!slash)
+         slash = strrchr(buf, '/');
+      if (slash) {
+         static const char *const names[] = {
+            "glslangValidator.exe",
+            "glslang.exe",
+         };
+         for (unsigned i = 0; i < ARRAY_SIZE(names); i++) {
+            snprintf(slash + 1, (size_t)(MAX_PATH - (slash + 1 - buf)),
+                     "%s", names[i]);
+            if (path_is_readable(buf))
+               return strdup(buf);
+         }
+      }
+   }
+
+   if (SearchPathA(NULL, "glslangValidator.exe", NULL, MAX_PATH, buf, NULL) > 0)
+      return strdup(buf);
+   if (SearchPathA(NULL, "glslang.exe", NULL, MAX_PATH, buf, NULL) > 0)
+      return strdup(buf);
+   if (SearchPathA(NULL, "glslangValidator", NULL, MAX_PATH, buf, NULL) > 0)
+      return strdup(buf);
+   return NULL;
+}
+
+static int
+compile_glsl_to_temp_spv(const char *src, mesa_shader_stage stage,
+                         char *tmp_spv, size_t tmp_spv_size)
+{
+   const char *glslang_stage = stage_to_glslang(stage);
+   if (!glslang_stage) {
+      fprintf(stderr, "GLSL stage is not supported by glslangValidator.\n");
+      return 1;
+   }
+
+   char *glslang = find_glslang_validator();
+   if (!glslang) {
+      fprintf(stderr,
+              "GLSL input requires glslangValidator.exe or glslang.exe.\n"
+              "Set GLSLANG_VALIDATOR, place the tool next to spirv2nir.exe, "
+              "or install the Vulkan SDK.\n");
+      return 1;
+   }
+
+   char tmp_dir[MAX_PATH];
+   DWORD n = GetTempPathA(MAX_PATH, tmp_dir);
+   if (n == 0 || n >= MAX_PATH) {
+      fprintf(stderr, "Failed to get temp path\n");
+      free(glslang);
+      return 1;
+   }
+
+   if (!GetTempFileNameA(tmp_dir, "spv", 0, tmp_spv)) {
+      fprintf(stderr, "Failed to create temp SPIR-V file\n");
+      free(glslang);
+      return 1;
+   }
+   (void)tmp_spv_size;
+
+   char cmd[4096];
+   int printed = snprintf(cmd, sizeof(cmd),
+                          "\"%s\" -V -S %s -o \"%s\" \"%s\"",
+                          glslang, glslang_stage, tmp_spv, src);
+   if (printed < 0 || (size_t)printed >= sizeof(cmd)) {
+      fprintf(stderr, "glslangValidator command line is too long\n");
+      DeleteFileA(tmp_spv);
+      free(glslang);
+      return 1;
+   }
+
+   STARTUPINFOA si;
+   PROCESS_INFORMATION pi;
+   memset(&si, 0, sizeof(si));
+   memset(&pi, 0, sizeof(pi));
+   si.cb = sizeof(si);
+
+   if (!CreateProcessA(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+      fprintf(stderr, "Failed to launch %s (error %lu)\n",
+              glslang, (unsigned long)GetLastError());
+      DeleteFileA(tmp_spv);
+      free(glslang);
+      return 1;
+   }
+
+   WaitForSingleObject(pi.hProcess, INFINITE);
+   DWORD code = 1;
+   GetExitCodeProcess(pi.hProcess, &code);
+   CloseHandle(pi.hProcess);
+   CloseHandle(pi.hThread);
+   free(glslang);
+
+   if (code != 0) {
+      fprintf(stderr, "glslangValidator failed with exit code %lu\n",
+              (unsigned long)code);
+      DeleteFileA(tmp_spv);
+      return 1;
+   }
+
+   return 0;
+}
+#endif
+
+static void
+maybe_delete_temp_spv(const char *path, bool do_delete)
+{
+#ifdef _WIN32
+   if (do_delete && path && path[0])
+      DeleteFileA(path);
+#else
+   (void)path;
+   (void)do_delete;
+#endif
 }
 
 struct entry_point {
@@ -308,6 +521,12 @@ int main(int argc, char **argv)
    }
 
     const char *filename = argv[optind];
+    if (!filename) {
+       fprintf(stderr, "Missing input file.\n");
+       print_usage(argv[0], stderr);
+       return 1;
+    }
+
     if (from_json) {
        if (!filename) {
           fprintf(stderr, "Missing JSON file.\n");
@@ -338,15 +557,46 @@ int main(int argc, char **argv)
        return 0;
     }
 
+    char compiled_spv[MAX_PATH];
+    compiled_spv[0] = '\0';
+    bool delete_compiled_spv = false;
+    if (!has_suffix_ci(filename, ".spv") &&
+        !has_suffix_ci(filename, ".json")) {
+       mesa_shader_stage from_ext = stage_from_filename(filename);
+       if (from_ext == MESA_SHADER_NONE) {
+          fprintf(stderr,
+                  "Unknown input \"%s\". Use .spv or GLSL "
+                  "(.vert/.frag/.comp/.tesc/.tese/.geom/.mesh/.task).\n",
+                  filename);
+          return 1;
+       }
+       if (entry_point.stage == MESA_SHADER_NONE)
+          entry_point.stage = from_ext;
+#ifndef _WIN32
+       fprintf(stderr,
+               "GLSL input is only compiled on Windows. Pass a .spv file "
+               "or run glslangValidator -V first.\n");
+       return 1;
+#else
+       if (compile_glsl_to_temp_spv(filename, entry_point.stage,
+                                    compiled_spv, sizeof(compiled_spv)))
+          return 1;
+       filename = compiled_spv;
+       delete_compiled_spv = true;
+#endif
+    }
+
     FILE *f = fopen(filename, "rb");
    if (!f) {
       fprintf(stderr, "Failed to open %s\n", filename);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
    if (fseek(f, 0, SEEK_END) != 0) {
       fprintf(stderr, "Failed to seek %s\n", filename);
       fclose(f);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
@@ -355,6 +605,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "File length isn't a multiple of the word size\n");
       fprintf(stderr, "Are you sure this is a valid SPIR-V shader?\n");
       fclose(f);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
@@ -363,6 +614,7 @@ int main(int argc, char **argv)
    if (!map) {
       fprintf(stderr, "Failed to allocate %ld bytes\n", len);
       fclose(f);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
@@ -371,6 +623,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "Failed to read %s\n", filename);
       free(map);
       fclose(f);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
    fclose(f);
@@ -380,6 +633,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "ERROR: Not a SPIR-V file. First word was 0x%x, want 0x%x (SPIR-V magic).",
               words[0], SpvMagicNumber);
       free(map);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
@@ -389,6 +643,7 @@ int main(int argc, char **argv)
    if (!entry_point.name) {
       ralloc_free(mem_ctx);
       free(map);
+      maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
       return 1;
    }
 
@@ -450,13 +705,14 @@ int main(int argc, char **argv)
       FILE *out = stdout;
       if (out_path) {
          out = fopen(out_path, "w");
-         if (!out) {
-            fprintf(stderr, "Failed to open %s for writing\n", out_path);
-            glsl_type_singleton_decref();
-            ralloc_free(mem_ctx);
-            free(map);
-            return 1;
-         }
+          if (!out) {
+             fprintf(stderr, "Failed to open %s for writing\n", out_path);
+             glsl_type_singleton_decref();
+             ralloc_free(mem_ctx);
+             free(map);
+             maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
+             return 1;
+          }
       }
 
       const char *api = "vulkan";
@@ -482,6 +738,7 @@ int main(int argc, char **argv)
 
     ralloc_free(mem_ctx);
     free(map);
+    maybe_delete_temp_spv(compiled_spv, delete_compiled_spv);
 
     return 0;
 }

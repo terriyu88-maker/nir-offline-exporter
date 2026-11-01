@@ -319,11 +319,10 @@ SSA 前缀是 **bit size × components**：
                                |
                                +--> nir_print_shader()              --> a.nir.txt
                                |
-                               +--> 遍历 --> 自有 IR --> 自有打印机 --> b.nir.txt
-                               |                 |
-                               |                 +--> JSON
-                               |                 +--> 自有二进制
-                               |
+                                +--> 遍历 --> 自有 IR（内存）--> 自有打印机 --> b.nir.txt
+                                |                 |
+                                |                 +--> JSON（对照）
+                                |
                                diff a.nir.txt b.nir.txt  == 空
 ```
 

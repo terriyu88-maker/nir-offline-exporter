@@ -97,6 +97,7 @@
 third_party/mesa/build-mingw/
 out/*.exe
 out/*.dll
+dist/
 
 # Ruby
 *.gem

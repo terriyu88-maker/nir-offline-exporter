@@ -1,6 +1,6 @@
 # nir-offline-exporter
 
-Offline Windows tool that takes SPIR-V, runs Mesa `spirv_to_nir()`, and dumps generic NIR (`nir_print_shader()`). Later stages map that in-memory `nir_shader` to a private IR whose reprint must `diff` empty against the NIR dump.
+Offline Windows tool that takes SPIR-V, runs Mesa `spirv_to_nir()`, and dumps generic NIR (`nir_print_shader()`). It maps that in-memory `nir_shader` to a private IR whose reprint must `diff` empty against the NIR dump. JSON is a contrast dump of the same in-memory IR; there is no private binary format.
 
 Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 
@@ -72,11 +72,33 @@ WINEPREFIX=/tmp/wine-spirv2nir PATH="/usr/lib/wine:$PATH" \
 
 `--lower-io` is contrast-only: after L1 it runs `nir_lower_io` on shader in/out so the dump can be diffed against the default deref IO.
 
+## GLSL input
+
+`.spv` is used as-is. `.vert` / `.frag` / `.comp` (and `.tesc` / `.tese` / `.geom` / `.mesh` / `.task`) are compiled with `glslangValidator -V` (or `glslang.exe`) then follow the same NIR path. Stage is inferred from the extension unless `--stage` is given.
+
+```bash
+spirv2nir.exe shaders/min.frag
+spirv2nir.exe shaders/min.frag --emit ours
+spirv2nir.exe shaders/min.frag --emit json -o out/min.frag.json
+```
+
+Find the glslang tool in this order: `GLSLANG_VALIDATOR`, next to `spirv2nir.exe`, then PATH. Without it, GLSL input fails with a clear error; pass `.spv` instead.
+
+## Windows package
+
+```bash
+scripts/pack-windows.sh
+```
+
+Writes `dist/spirv2nir/spirv2nir.exe`, `libwinpthread-1.dll`, and `README.txt`. glslang is not bundled; copy `glslang.exe` from a Khronos Windows release next to the exe, or install the Vulkan SDK.
+
+`objdump -p spirv2nir.exe` should list Windows DLLs only (`KERNEL32.dll`, `msvcrt.dll`, `libwinpthread-1.dll`, plus an API-set DLL).
+
 ## Local patches on Mesa 26.2.5
 
-- `src/compiler/spirv/spirv2nir.c`: `fopen`/`fread` instead of POSIX `mmap`; always runs the L1 pass list then `nir_validate_shader()`; `--lower-io` is contrast-only
+- `src/compiler/spirv/spirv2nir.c`: `fopen`/`fread` instead of POSIX `mmap`; always runs the L1 pass list then `nir_validate_shader()`; `--lower-io` is contrast-only; GLSL files call `glslangValidator -V`
 - `meson.build`: `tools=nir` forces full NIR (`with_gfx_compute`), so `libnir` is not the stub
 
 ## Status
 
-Stage 2 golden 1–5 done (`--emit ours` vs `nir_print_shader()`, `diff` empty). Stage 3 done: `--emit json -o shader.json` dumps own_ir; `--from-json shader.json` reprints it. Wine: `JSON → own printer` vs Mesa dump, `diff` empty on goldens 1–5. Schema: `.monkeycode/specs/nir-offline-exporter/own_ir.schema.json`. Next: stage 4 binary.
+Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–5. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.
