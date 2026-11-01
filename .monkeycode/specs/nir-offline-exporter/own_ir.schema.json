@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "own_ir.schema.json",
+  "title": "own_ir JSON (stage 3)",
+  "description": "Lossless dump of the in-memory own_ir after L1. SSA ids are integers, opcodes and modes are Mesa C enumerator names, blocks are labeled bN. GLSL types are glsl_get_type_name() strings. Header pins mesa_git, stage, and api.",
+  "type": "object",
+  "required": ["schema_version", "mesa_git", "stage", "api", "variables", "functions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "mesa_git": { "type": "string" },
+    "stage": { "type": "string" },
+    "api": { "type": "string", "enum": ["vulkan", "opengl", "opencl"] },
+    "name": { "type": "string" },
+    "source_blake3": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+    },
+    "max_subgroup_size": { "type": "integer", "minimum": 0 },
+    "min_subgroup_size": { "type": "integer", "minimum": 0 },
+    "origin_upper_left": { "type": "boolean" },
+    "workgroup_size": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "integer", "minimum": 0 }
+    },
+    "workgroup_size_variable": { "type": "boolean" },
+    "num_inputs": { "type": "integer", "minimum": 0 },
+    "num_outputs": { "type": "integer", "minimum": 0 },
+    "num_uniforms": { "type": "integer", "minimum": 0 },
+    "num_textures": { "type": "integer", "minimum": 0 },
+    "num_ubos": { "type": "integer", "minimum": 0 },
+    "num_abos": { "type": "integer", "minimum": 0 },
+    "num_ssbos": { "type": "integer", "minimum": 0 },
+    "num_images": { "type": "integer", "minimum": 0 },
+    "scratch_size": { "type": "integer", "minimum": 0 },
+    "variables": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/var" }
+    },
+    "functions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/function" }
+    }
+  },
+  "$defs": {
+    "ssa": { "type": "integer", "minimum": 0 },
+    "value": {
+      "type": "object",
+      "required": ["index", "bit_size", "num_components"],
+      "additionalProperties": false,
+      "properties": {
+        "index": { "$ref": "#/$defs/ssa" },
+        "bit_size": { "type": "integer", "minimum": 0 },
+        "num_components": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "u32_vec": {
+      "type": "array",
+      "maxItems": 16,
+      "items": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+    },
+    "src_const": {
+      "type": "object",
+      "required": ["ssa"],
+      "properties": {
+        "ssa": { "$ref": "#/$defs/ssa" },
+        "is_const": { "type": "boolean" },
+        "const_components": { "type": "integer", "minimum": 0 },
+        "const_bit_size": { "type": "integer", "minimum": 0 },
+        "const_u32": { "$ref": "#/$defs/u32_vec" }
+      }
+    },
+    "var": {
+      "type": "object",
+      "required": ["mode", "interpolation", "type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string" },
+        "interpolation": { "type": "string" },
+        "type": { "type": ["string", "null"] },
+        "type_components": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "location": { "type": "integer" },
+        "location_frac": { "type": "integer", "minimum": 0 },
+        "component_mask": { "type": "integer", "minimum": 0 },
+        "driver_location": { "type": "integer", "minimum": 0 },
+        "binding": { "type": "integer", "minimum": 0 },
+        "access": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["index", "label", "preds", "succs", "instrs"],
+      "additionalProperties": false,
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string", "pattern": "^b[0-9]+$" },
+        "is_end_block": { "type": "boolean" },
+        "preds": { "type": "array", "items": { "type": "string", "pattern": "^b[0-9]+$" } },
+        "succs": { "type": "array", "items": { "type": "string", "pattern": "^b[0-9]+$" } },
+        "instrs": { "type": "array", "items": { "$ref": "#/$defs/instr" } }
+      }
+    },
+    "cf_node": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["block", "if", "loop"] },
+        "block": { "$ref": "#/$defs/block" },
+        "if": { "$ref": "#/$defs/if" },
+        "loop": { "$ref": "#/$defs/loop" }
+      }
+    },
+    "if": {
+      "type": "object",
+      "required": ["cond", "then", "else"],
+      "additionalProperties": false,
+      "properties": {
+        "cond": { "$ref": "#/$defs/src_const" },
+        "control": { "type": "string" },
+        "then": { "type": "array", "items": { "$ref": "#/$defs/cf_node" } },
+        "else": { "type": "array", "items": { "$ref": "#/$defs/cf_node" } }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "required": ["body"],
+      "additionalProperties": false,
+      "properties": {
+        "control": { "type": "string" },
+        "has_continue": { "type": "boolean" },
+        "body": { "type": "array", "items": { "$ref": "#/$defs/cf_node" } },
+        "continue": { "type": "array", "items": { "$ref": "#/$defs/cf_node" } }
+      }
+    },
+    "function": {
+      "type": "object",
+      "required": ["name", "is_entrypoint", "ssa_alloc", "locals", "body"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "is_entrypoint": { "type": "boolean" },
+        "ssa_alloc": { "type": "integer", "minimum": 0 },
+        "locals": { "type": "array", "items": { "$ref": "#/$defs/var" } },
+        "body": { "type": "array", "items": { "$ref": "#/$defs/cf_node" } },
+        "end_block": { "$ref": "#/$defs/block" }
+      }
+    },
+    "instr": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["alu", "deref", "intrinsic", "load_const", "jump", "tex", "phi", "undef", "unimplemented"]
+        },
+        "alu": { "type": "object" },
+        "deref": { "type": "object" },
+        "intrinsic": { "type": "object" },
+        "load_const": { "type": "object" },
+        "jump": { "type": "object" },
+        "tex": { "type": "object" },
+        "phi": { "type": "object" },
+        "undef": { "type": "object" },
+        "unimplemented": { "type": "object" }
+      }
+    }
+  }
+}

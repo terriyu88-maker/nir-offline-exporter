@@ -134,7 +134,9 @@ print_usage(char *exec_name, FILE *f)
            "                          graphics stages.\n"
            "  --optimize              Extra NIR opts after the fixed L1 pass list.\n"
            "  --lower-io              Contrast only: run nir_lower_io on in/out after L1.\n"
-           "  --emit <fmt>            Dump format: mesa (default) or ours.\n"
+            "  --emit <fmt>            Dump format: mesa (default), ours, or json.\n"
+            "  --from-json             Read own_ir JSON and reprint with the own printer.\n"
+            "  -o, --output <file>     Write dump to file instead of stdout.\n"
            "\n"
            "L1 (always): lower temp initializers, returns, inline, copy_prop/deref,\n"
            "dce/cse, algebraic/constant_folding, dead_cf/loop. Then validate and dump.\n"
@@ -231,10 +233,12 @@ int main(int argc, char **argv)
       .stage = MESA_SHADER_NONE,
    };
    int ch;
-   bool optimize = false;
-   bool lower_io = false;
-   enum own_ir_emit emit = OWN_IR_EMIT_MESA;
-   enum nir_spirv_execution_environment env = NIR_SPIRV_VULKAN;
+    bool optimize = false;
+    bool lower_io = false;
+    bool from_json = false;
+    enum own_ir_emit emit = OWN_IR_EMIT_MESA;
+    enum nir_spirv_execution_environment env = NIR_SPIRV_VULKAN;
+    const char *out_path = NULL;
 
    static struct option long_options[] =
       {
@@ -243,12 +247,14 @@ int main(int argc, char **argv)
          {"entry",    required_argument, 0, 'e'},
          {"opengl",   no_argument,       0, 'g'},
          {"optimize", no_argument,       0, 'O'},
-         {"lower-io", no_argument,       0, 'L'},
-         {"emit",     required_argument, 0, 'E'},
-         {0, 0,                          0, 0}
-      };
+          {"lower-io", no_argument,       0, 'L'},
+          {"emit",     required_argument, 0, 'E'},
+          {"from-json", no_argument,      0, 'J'},
+          {"output",   required_argument, 0, 'o'},
+          {0, 0,                          0, 0}
+       };
 
-   while ((ch = getopt_long(argc, argv, "hs:e:g", long_options, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hs:e:go:", long_options, NULL)) != -1) {
       switch (ch) {
       case 'h':
          print_usage(argv[0], stdout);
@@ -280,11 +286,19 @@ int main(int argc, char **argv)
             emit = OWN_IR_EMIT_MESA;
          } else if (!strcmp(optarg, "ours")) {
             emit = OWN_IR_EMIT_OURS;
+         } else if (!strcmp(optarg, "json")) {
+            emit = OWN_IR_EMIT_JSON;
          } else {
-            fprintf(stderr, "Unknown --emit \"%s\" (mesa|ours)\n", optarg);
+            fprintf(stderr, "Unknown --emit \"%s\" (mesa|ours|json)\n", optarg);
             print_usage(argv[0], stderr);
             return 1;
          }
+         break;
+      case 'J':
+         from_json = true;
+         break;
+      case 'o':
+         out_path = optarg;
          break;
       default:
          fprintf(stderr, "Unrecognized option \"%s\".\n", optarg);
@@ -293,8 +307,38 @@ int main(int argc, char **argv)
       }
    }
 
-   const char *filename = argv[optind];
-   FILE *f = fopen(filename, "rb");
+    const char *filename = argv[optind];
+    if (from_json) {
+       if (!filename) {
+          fprintf(stderr, "Missing JSON file.\n");
+          print_usage(argv[0], stderr);
+          return 1;
+       }
+       FILE *out = stdout;
+       if (out_path) {
+          out = fopen(out_path, "w");
+          if (!out) {
+             fprintf(stderr, "Failed to open %s for writing\n", out_path);
+             return 1;
+          }
+       }
+       char *err = NULL;
+       struct own_ir_module *m = own_ir_from_json(NULL, filename, &err);
+       if (!m) {
+          fprintf(stderr, "Failed to read JSON %s: %s\n", filename,
+                  err ? err : "unknown error");
+          if (out != stdout)
+             fclose(out);
+          return 1;
+       }
+       own_ir_print_module(m, out);
+       if (out != stdout)
+          fclose(out);
+       ralloc_free(m);
+       return 0;
+    }
+
+    FILE *f = fopen(filename, "rb");
    if (!f) {
       fprintf(stderr, "Failed to open %s\n", filename);
       return 1;
@@ -403,10 +447,33 @@ int main(int argc, char **argv)
       if (lower_io)
          run_lower_io_contrast(nir);
 
+      FILE *out = stdout;
+      if (out_path) {
+         out = fopen(out_path, "w");
+         if (!out) {
+            fprintf(stderr, "Failed to open %s for writing\n", out_path);
+            glsl_type_singleton_decref();
+            ralloc_free(mem_ctx);
+            free(map);
+            return 1;
+         }
+      }
+
+      const char *api = "vulkan";
+      if (entry_point.stage == MESA_SHADER_KERNEL || env == NIR_SPIRV_OPENCL)
+         api = "opencl";
+      else if (env == NIR_SPIRV_OPENGL)
+         api = "opengl";
+
       if (emit == OWN_IR_EMIT_OURS)
-         own_ir_print_shader(nir, stdout);
+         own_ir_print_shader(nir, out);
+      else if (emit == OWN_IR_EMIT_JSON)
+         own_ir_print_json(nir, out, api);
       else
-         nir_print_shader(nir, stdout);
+         nir_print_shader(nir, out);
+
+      if (out != stdout)
+         fclose(out);
    } else {
       fprintf(stderr, "SPIRV to NIR compilation failed\n");
    }

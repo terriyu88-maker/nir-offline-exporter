@@ -13,8 +13,14 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `.monkeycode/specs/nir-offline-exporter/tasklist.md` | Staged plan |
 | `shaders/min.frag` | Golden 1: ALU fragment |
 | `shaders/tex.frag` | Golden 2: 2D texture sample |
+| `shaders/ubo.vert` | Golden 3: UBO vertex |
+| `shaders/ifloop.frag` | Golden 4: if / loop fragment |
+| `shaders/ssbo.comp` | Golden 5: SSBO atomic compute |
 | `out/min.frag.nir.txt` | Sample `nir_print_shader()` dump |
 | `out/tex.frag.nir.txt` | Golden 2 Mesa dump |
+| `out/ubo.vert.nir.txt` | Golden 3 Mesa dump |
+| `out/ifloop.frag.nir.txt` | Golden 4 Mesa dump |
+| `out/ssbo.comp.nir.txt` | Golden 5 Mesa dump |
 
 ## Cross-build (Linux → Windows PE)
 
@@ -73,4 +79,4 @@ WINEPREFIX=/tmp/wine-spirv2nir PATH="/usr/lib/wine:$PATH" \
 
 ## Status
 
-Stage 2 golden 1–2 done: `--emit ours` reprints the same text as `nir_print_shader()` on `shaders/min.frag.spv` and `shaders/tex.frag.spv` (`diff` empty). Covered: `deref_var`, `@load_deref`, `load_const`, `fmul`, `@store_deref`, `(float32)tex` with texture/sampler deref. Phi / Undef remain placeholders. Next: golden 3–5 (UBO / if-loop / SSBO), then stage 3 JSON.
+Stage 2 golden 1–5 done (`--emit ours` vs `nir_print_shader()`, `diff` empty). Stage 3 done: `--emit json -o shader.json` dumps own_ir; `--from-json shader.json` reprints it. Wine: `JSON → own printer` vs Mesa dump, `diff` empty on goldens 1–5. Schema: `.monkeycode/specs/nir-offline-exporter/own_ir.schema.json`. Next: stage 4 binary.

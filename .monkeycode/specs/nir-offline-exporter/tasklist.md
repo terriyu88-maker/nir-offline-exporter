@@ -192,6 +192,31 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
   - [x] 10.4 `decl_var` access 按 Mesa 位名打印（黄金件 2 的 `restrict`）
   - [x] 10.5 Wine：`tex.frag.spv` 与 `min.frag.spv` 的默认 dump vs `--emit ours`，`diff` 均为空
 
+- [x] 11. 检查点：黄金件 3（带 UBO 的 VS）
+  - [x] 11.1 `shaders/ubo.vert`：`uniform UBO { mat4 mvp; }` 经 `glslangValidator -V`
+  - [x] 11.2 shader 头：`num_ubos` 在 subgroup 之前打印
+  - [x] 11.3 匿名 `gl_PerVertex` 打成 `#0`；VS in 用 `VERT_ATTRIB_GENERIC0`
+  - [x] 11.4 deref：`deref_cast` / `deref_struct` / `deref_array`（含 `(in bounds)` 与整链注释）
+  - [x] 11.5 intrinsic：`@vulkan_resource_index` / `@load_vulkan_descriptor` 的 `desc_set`/`binding`/`desc_type`/`resource_type`；const src 内联 `(0x0)`
+  - [x] 11.6 ALU swizzle：`%17.wwww` 等与 Mesa 一致
+  - [x] 11.7 Wine：`ubo.vert.spv` 以及黄金件 1–2 回归，`diff` 均为空
+
+- [x] 12. 检查点：黄金件 4（带分支/循环的 FS）
+  - [x] 12.1 `shaders/ifloop.frag`：if/else + `for` 经 `glslangValidator -V`
+  - [x] 12.2 walker 按 CF 树走 `nir_cf_node`：block / if / loop，不再线性扫块
+  - [x] 12.3 打印机对齐 `print_if` / `print_loop`：嵌套缩进、`} else {`、空块 preds/succs 同行
+  - [x] 12.4 function_temp 在 `impl` 内打印（`c`/`n`/`i`/`loop_break`/`loop_continue`）
+  - [x] 12.5 ALU：`fp_math_ctrl` 打 `// preserve:inf,nan`；整数常量按 uint 内联
+  - [x] 12.6 phi 源按 sorted preds 填（本黄金件无 phi）
+  - [x] 12.7 Wine：`ifloop.frag.spv` 以及黄金件 1–3 回归，`diff` 均为空
+
+- [x] 13. 检查点：黄金件 5（带 SSBO/原子的 CS）
+  - [x] 13.1 `shaders/ssbo.comp`：`atomicAdd` + SSBO 数组写，经 `glslangValidator -V`
+  - [x] 13.2 shader 头：`workgroup_size` 在 `num_ssbos` 之前打印
+  - [x] 13.3 system value：`gl_GlobalInvocationID` 打成 `(SYSTEM_VALUE_GLOBAL_INVOCATION_ID)`（无 driver_location）
+  - [x] 13.4 `@deref_atomic`：`access=coherent`、`atomic_op=iadd`
+  - [x] 13.5 Wine：`ssbo.comp.spv` 以及黄金件 1–4 回归，`diff` 均为空
+
 ### 阶段 3：JSON 导出（对照格式）
 
 **做：**
@@ -207,6 +232,13 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 - JSON schema 校验通过
 - `JSON → 自有 IR → 自有打印机` 的文本与原始 NIR dump 一致（`diff` 为空）
 - 黄金件（至少 VS 变换、FS 贴图、CS 原子）JSON 纳入 git，回归 diff 为空
+
+- [x] 1. Schema + 写出（当前步）
+  - [x] 1.1 `own_ir.schema.json`：SSA 整数、opcode/mode 用 Mesa 枚举名、块 `bN`、CF 嵌套、GLSL 类型名
+  - [x] 1.2 `own_ir/json.c`：自有 IR → JSON；头含 `mesa_git` / `stage` / `api`
+  - [x] 1.3 CLI：`--emit json`、`-o`；Wine 对黄金件 1–5 写出可解析 JSON
+- [x] 2. JSON 读回 → 自有 IR → 自有打印机，与 dump `diff` 空
+- [x] 3. 黄金件 JSON 入库
 
 ### 阶段 4：自有二进制（存储格式）
 

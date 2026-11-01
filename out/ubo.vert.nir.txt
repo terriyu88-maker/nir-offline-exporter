@@ -1,0 +1,49 @@
+shader: MESA_SHADER_VERTEX
+source_blake3: {0x3ed94d8a, 0x5d241af6, 0x9a22b7f1, 0xbd6f179a, 0x9af6e313, 0x7715e400, 0x474d66c2, 0x326f7178}
+name: 
+num_ubos: 1
+max_subgroup_size: 128
+min_subgroup_size: 1
+decl_var shader_in INTERP_MODE_NONE none vec4 a_pos (VERT_ATTRIB_GENERIC0.xyzw, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none gl_PerVertex #0 (VARYING_SLOT_POS, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 v_pos (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_var ubo INTERP_MODE_NONE none UBO u (~0, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:   // preds:
+    32     %0 = load_const (0x00000000 = 0.000000)
+    32     %1 = @vulkan_resource_index (%0 (0x0)) (desc_set=0, binding=0, desc_type=UBO, resource_type=UBO)
+    32     %2 = @load_vulkan_descriptor (%1) (desc_type=UBO)
+    32     %3 = deref_cast (UBO *)%2 (ubo UBO)  (ptr_stride=0, align_mul=0, align_offset=0)
+    32     %4 = deref_struct &%3->mvp (ubo mat4x16a0B)  // &((UBO *)%2)->mvp
+    32     %5 = deref_array &(*%4)[0] (ubo vec4)  (in bounds)  // &((UBO *)%2)->mvp[0]
+    32x4   %6 = @load_deref (%5) (access=none)
+    32     %7 = load_const (0x00000001 = 0.000000)
+    32     %8 = deref_array &(*%4)[1] (ubo vec4)  (in bounds)  // &((UBO *)%2)->mvp[1]
+    32x4   %9 = @load_deref (%8) (access=none)
+    32    %10 = load_const (0x00000002 = 0.000000)
+    32    %11 = deref_array &(*%4)[2] (ubo vec4)  (in bounds)  // &((UBO *)%2)->mvp[2]
+    32x4  %12 = @load_deref (%11) (access=none)
+    32    %13 = load_const (0x00000003 = 0.000000)
+    32    %14 = deref_array &(*%4)[3] (ubo vec4)  (in bounds)  // &((UBO *)%2)->mvp[3]
+    32x4  %15 = @load_deref (%14) (access=none)
+    32    %16 = deref_var &a_pos (shader_in vec4)
+    32x4  %17 = @load_deref (%16) (access=none)
+    32x4  %18 = fmul %15, %17.wwww
+    32x4  %19 = fmul %12, %17.zzzz
+    32x4  %20 = fadd %19, %18
+    32x4  %21 = fmul %9, %17.yyyy
+    32x4  %22 = fadd %21, %20
+    32x4  %23 = fmul %6, %17.xxxx
+    32x4  %24 = fadd %23, %22
+    32    %25 = deref_var &v_pos (shader_out vec4)
+                @store_deref (%25, %24) (wrmask=xyzw, access=none)
+    32x4  %26 = @load_deref (%25) (access=none)
+    32    %27 = deref_var &#0 (shader_out gl_PerVertex)
+    32    %28 = deref_struct &%27->gl_Position (shader_out vec4)  // &#0.gl_Position
+                @store_deref (%28, %26) (wrmask=xyzw, access=none)
+                // succs: b1
+    block b1:
+}
+

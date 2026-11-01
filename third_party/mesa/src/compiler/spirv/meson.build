@@ -72,10 +72,11 @@ spirv2nir = executable(
     'own_ir/ir.c',
     'own_ir/walk.c',
     'own_ir/print.c',
+    'own_ir/json.c',
   ) + [
    vtn_generator_ids_h,
   ],
-  dependencies : [dep_m, idep_vtn, idep_mesautil],
+  dependencies : [dep_m, idep_vtn, idep_mesautil, idep_parson],
   include_directories : [inc_include, inc_src],
   c_args : [c_msvc_compat_args, no_override_init_args],
   gnu_symbol_visibility : 'hidden',

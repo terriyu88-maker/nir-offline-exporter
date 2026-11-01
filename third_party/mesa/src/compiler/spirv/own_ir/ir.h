@@ -11,6 +11,7 @@
 enum own_ir_emit {
    OWN_IR_EMIT_MESA = 0,
    OWN_IR_EMIT_OURS,
+   OWN_IR_EMIT_JSON,
 };
 
 enum own_ir_instr_kind {
@@ -35,6 +36,8 @@ struct own_ir_var {
    nir_variable_mode mode;
    enum glsl_interp_mode interpolation;
    const struct glsl_type *type;
+   const char *type_name;
+   unsigned type_components;
    const char *name;
    int location;
    unsigned location_frac;
@@ -59,6 +62,9 @@ struct own_ir_alu {
    nir_op op;
    unsigned num_srcs;
    struct own_ir_alu_src src[NIR_ALU_MAX_INPUTS];
+   bool no_signed_wrap;
+   bool no_unsigned_wrap;
+   uint32_t fp_math_ctrl;
 };
 
 struct own_ir_deref {
@@ -67,15 +73,38 @@ struct own_ir_deref {
    const char *var_name;
    nir_variable_mode modes;
    const struct glsl_type *type;
+   const char *type_name;
+   unsigned parent_ssa;
+   unsigned arr_index_ssa;
+   bool arr_index_is_const;
+   int64_t arr_index_const;
+   bool arr_in_bounds;
+   unsigned struct_index;
+   const char *struct_field;
+   unsigned ptr_stride;
+   unsigned align_mul;
+   unsigned align_offset;
+   const char *chain_comment;
+};
+
+struct own_ir_intrinsic_src {
+   unsigned ssa;
+   nir_alu_type alu_type;
+   bool is_const;
+   uint8_t const_components;
+   uint8_t const_bit_size;
+   uint32_t const_u32[NIR_MAX_VEC_COMPONENTS];
 };
 
 struct own_ir_intrinsic {
    bool has_dest;
    struct own_ir_value dest;
    nir_intrinsic_op op;
+   nir_alu_type dest_alu_type;
    const char *name;
    unsigned num_srcs;
-   unsigned src_ssa[OWN_IR_MAX_SRCS];
+   struct own_ir_intrinsic_src src[OWN_IR_MAX_SRCS];
+   int const_index[NIR_INTRINSIC_MAX_CONST_INDEX];
    unsigned access;
    unsigned write_mask;
    uint8_t num_components;
@@ -123,8 +152,18 @@ struct own_ir_tex {
    uint32_t backend_flags;
 };
 
+struct own_ir_phi_src {
+   unsigned pred;
+   unsigned ssa;
+   bool is_const;
+   uint8_t const_components;
+   uint8_t const_bit_size;
+   uint32_t const_u32[NIR_MAX_VEC_COMPONENTS];
+};
+
 struct own_ir_phi {
    struct own_ir_value dest;
+   struct util_dynarray srcs;
 };
 
 struct own_ir_undef {
@@ -159,12 +198,49 @@ struct own_ir_block {
    struct util_dynarray instrs;
 };
 
+struct own_ir_if {
+   unsigned cond_ssa;
+   bool cond_is_const;
+   uint8_t const_components;
+   uint8_t const_bit_size;
+   uint32_t const_u32[NIR_MAX_VEC_COMPONENTS];
+   nir_selection_control control;
+   struct util_dynarray then_list;
+   struct util_dynarray else_list;
+};
+
+struct own_ir_loop {
+   nir_loop_control control;
+   bool has_continue;
+   struct util_dynarray body;
+   struct util_dynarray continue_list;
+};
+
+enum own_ir_cf_kind {
+   OWN_IR_CF_BLOCK,
+   OWN_IR_CF_IF,
+   OWN_IR_CF_LOOP,
+};
+
+struct own_ir_cf_node {
+   enum own_ir_cf_kind kind;
+   union {
+      struct own_ir_block *block;
+      struct own_ir_if *nif;
+      struct own_ir_loop *loop;
+   };
+};
+
 struct own_ir_function {
    void *mem_ctx;
    const char *name;
    bool is_entrypoint;
    unsigned ssa_alloc;
-   struct util_dynarray blocks;
+   BITSET_WORD *float_types;
+   BITSET_WORD *int_types;
+   struct util_dynarray locals;
+   struct util_dynarray body;
+   struct own_ir_block *end_block;
 };
 
 struct own_ir_module {
@@ -175,12 +251,20 @@ struct own_ir_module {
    uint8_t max_subgroup_size;
    uint8_t min_subgroup_size;
    bool origin_upper_left;
+   unsigned workgroup_size[3];
+   bool workgroup_size_variable;
    const char *mesa_version;
    unsigned num_inputs;
    unsigned num_outputs;
    unsigned num_uniforms;
+   unsigned num_textures;
+   unsigned num_ubos;
+   unsigned num_abos;
+   unsigned num_ssbos;
+   unsigned num_images;
    unsigned scratch_size;
    unsigned unimplemented_count;
+   struct hash_table *var_print_names;
    struct util_dynarray variables;
    struct util_dynarray functions;
 };
@@ -188,13 +272,24 @@ struct own_ir_module {
 const char *own_ir_mesa_version(void);
 struct own_ir_module *own_ir_module_create(void *mem_ctx);
 struct own_ir_var *own_ir_module_add_var(struct own_ir_module *m);
+struct own_ir_var *own_ir_function_add_local(struct own_ir_function *fn);
 struct own_ir_function *own_ir_module_add_function(struct own_ir_module *m);
-struct own_ir_block *own_ir_function_add_block(struct own_ir_function *fn);
+struct own_ir_block *own_ir_block_create(void *mem_ctx);
+struct own_ir_if *own_ir_if_create(void *mem_ctx);
+struct own_ir_loop *own_ir_loop_create(void *mem_ctx);
+struct own_ir_cf_node *own_ir_cf_wrap_block(void *mem_ctx, struct own_ir_block *block);
+struct own_ir_cf_node *own_ir_cf_wrap_if(void *mem_ctx, struct own_ir_if *nif);
+struct own_ir_cf_node *own_ir_cf_wrap_loop(void *mem_ctx, struct own_ir_loop *loop);
 struct own_ir_instr *own_ir_block_add_instr(struct own_ir_block *block);
 void own_ir_block_add_pred(struct own_ir_block *block, unsigned index);
 void own_ir_block_add_succ(struct own_ir_block *block, unsigned index);
 
 struct own_ir_module *own_ir_walk(struct nir_shader *nir);
+void own_ir_gather_types(struct own_ir_function *fn);
+void own_ir_print_module(const struct own_ir_module *m, FILE *fp);
 void own_ir_print_shader(struct nir_shader *nir, FILE *fp);
+void own_ir_print_json(struct nir_shader *nir, FILE *fp, const char *api);
+struct own_ir_module *own_ir_from_json(void *mem_ctx, const char *path,
+                                       char **err);
 
 #endif

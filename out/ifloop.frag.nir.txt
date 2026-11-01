@@ -1,0 +1,86 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0x82b4f4c8, 0xf3d32836, 0x8aa5545d, 0xa243d12e, 0x87913f8f, 0xa228ecb8, 0x1f160048, 0xb058cc30}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+decl_var shader_in INTERP_MODE_NONE none vec4 v_color (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none float v_count (VARYING_SLOT_VAR1.x, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o_color (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none vec4 c
+    decl_var  INTERP_MODE_NONE none int n
+    decl_var  INTERP_MODE_NONE none int i
+    decl_var  INTERP_MODE_NONE none bool loop_break
+    decl_var  INTERP_MODE_NONE none bool loop_continue
+    block b0:   // preds:
+    32     %0 = deref_var &v_color (shader_in vec4)
+    32x4   %1 = @load_deref (%0) (access=none)
+    32     %2 = deref_var &c (function_temp vec4)
+                @store_deref (%2, %1) (wrmask=xyzw, access=none)
+    32     %3 = load_const (0x3f000000 = 0.500000)
+    1      %4 = flt %3 (0.500000), %1.w // preserve:inf,nan
+                // succs: b1 b2
+    if %4 {
+        block b1:   // preds: b0
+        32x4   %5 = @load_deref (%2) (access=none)
+        32     %6 = load_const (0x40000000 = 2.000000)
+        32x4   %7 = fmul %5, %6 (2.000000).xxxx
+                    @store_deref (%2, %7) (wrmask=xyzw, access=none)
+                    // succs: b3
+    } else {
+        block b2:   // preds: b0
+        32x4   %8 = @load_deref (%2) (access=none)
+        32x4   %9 = fmul %8, %3 (0.500000).xxxx
+                    @store_deref (%2, %9) (wrmask=xyzw, access=none)
+                    // succs: b3
+    }
+    block b3:   // preds: b1 b2
+    32    %10 = deref_var &v_count (shader_in float)
+    32    %11 = @load_deref (%10) (access=none)
+    32    %12 = f2i32 %11
+    32    %13 = deref_var &n (function_temp int)
+                @store_deref (%13, %12) (wrmask=x, access=none)
+    32    %14 = load_const (0x00000000)
+    32    %15 = deref_var &i (function_temp int)
+                @store_deref (%15, %14 (0x0)) (wrmask=x, access=none)
+    1     %16 = load_const (false)
+    32    %17 = deref_var &loop_break (function_temp bool)
+                @store_deref (%17, %16 (false)) (wrmask=x, access=none)
+                // succs: b4
+    loop {
+        block b4:   // preds: b3 b7
+        32    %18 = deref_var &loop_continue (function_temp bool)
+                    @store_deref (%18, %16 (false)) (wrmask=x, access=none)
+        32    %19 = @load_deref (%15) (access=none)
+        32    %20 = @load_deref (%13) (access=none)
+        1     %21 = ilt %19, %20
+                    // succs: b5 b6
+        if %21 {
+            block b5:  // preds: b4, succs: b7
+        } else {
+            block b6:// preds: b4
+            break
+            // succs: b8
+        }
+        block b7:   // preds: b5
+        32x4  %22 = @load_deref (%2) (access=none)
+        32    %23 = load_const (0x3f666666 = 0.900000)
+        32x4  %24 = fmul %22, %23 (0.900000).xxxx
+                    @store_deref (%2, %24) (wrmask=xyzw, access=none)
+        32    %25 = @load_deref (%15) (access=none)
+        32    %26 = load_const (0x00000001)
+        32    %27 = iadd %25, %26 (0x1)
+                    @store_deref (%15, %27) (wrmask=x, access=none)
+                    // succs: b4
+    }
+    block b8:   // preds: b6
+    32x4  %28 = @load_deref (%2) (access=none)
+    32    %29 = deref_var &o_color (shader_out vec4)
+                @store_deref (%29, %28) (wrmask=xyzw, access=none)
+                // succs: b9
+    block b9:
+}
+

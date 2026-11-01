@@ -1,0 +1,40 @@
+shader: MESA_SHADER_COMPUTE
+source_blake3: {0x090c6e8e, 0x9a52db30, 0xca6d4104, 0x8c4c1e55, 0xbacde20b, 0x50482f83, 0x2474de57, 0x17b6d84a}
+name: 
+workgroup_size: 64, 1, 1
+num_ssbos: 1
+max_subgroup_size: 128
+min_subgroup_size: 1
+decl_var system INTERP_MODE_NONE none uvec3 gl_GlobalInvocationID (SYSTEM_VALUE_GLOBAL_INVOCATION_ID)
+decl_var ssbo INTERP_MODE_NONE restrict SSBO s (~0, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none uint i
+    decl_var  INTERP_MODE_NONE none uint old
+    block b0:   // preds:
+    32     %0 = deref_var &gl_GlobalInvocationID (system uvec3)
+    32x3   %1 = @load_deref (%0) (access=none)
+    32     %2 = mov %1.x
+    32     %3 = deref_var &i (function_temp uint)
+                @store_deref (%3, %2) (wrmask=x, access=none)
+    32     %4 = load_const (0x00000000 = 0.000000)
+    32     %5 = @vulkan_resource_index (%4 (0x0)) (desc_set=0, binding=0, desc_type=SSBO, resource_type=RW-SSBO)
+    32     %6 = @load_vulkan_descriptor (%5) (desc_type=SSBO)
+    32     %7 = deref_cast (SSBO *)%6 (ssbo SSBO)  (ptr_stride=0, align_mul=0, align_offset=0)
+    32     %8 = deref_struct &%7->count (ssbo uint)  // &((SSBO *)%6)->count
+    32     %9 = load_const (0x00000001 = 0.000000)
+    32    %10 = @deref_atomic (%8, %9 (0x1)) (access=coherent, atomic_op=iadd)
+    32    %11 = deref_var &old (function_temp uint)
+                @store_deref (%11, %10) (wrmask=x, access=none)
+    32    %12 = @load_deref (%3) (access=none)
+    32    %13 = @load_deref (%11) (access=none)
+    32    %14 = @load_deref (%3) (access=none)
+    32    %15 = iadd %13, %14
+    32    %16 = deref_struct &%7->data (ssbo uint[])  // &((SSBO *)%6)->data
+    32    %17 = deref_array &(*%16)[%12] (ssbo uint)  (in bounds)  // &((SSBO *)%6)->data[%12]
+                @store_deref (%17, %15) (wrmask=x, access=none)
+                // succs: b1
+    block b1:
+}
+
