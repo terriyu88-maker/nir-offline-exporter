@@ -12,7 +12,7 @@ own_ir_module_create(void *mem_ctx)
    struct own_ir_module *m = rzalloc(mem_ctx, struct own_ir_module);
    m->mem_ctx = m;
    m->stage = MESA_SHADER_NONE;
-   m->name = "";
+    m->name = NULL;
     m->mesa_version = own_ir_mesa_version();
     m->var_print_names = _mesa_pointer_hash_table_create(m);
     util_dynarray_init(&m->variables, m);

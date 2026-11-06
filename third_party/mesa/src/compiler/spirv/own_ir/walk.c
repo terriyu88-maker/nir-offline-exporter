@@ -561,7 +561,7 @@ own_ir_walk(struct nir_shader *nir)
 
    m->stage = nir->info.stage;
    memcpy(m->source_blake3, nir->info.source_blake3, sizeof(m->source_blake3));
-   m->name = nir->info.name ? nir->info.name : "";
+   m->name = nir->info.name;
    m->max_subgroup_size = nir->info.max_subgroup_size;
    m->min_subgroup_size = nir->info.min_subgroup_size;
    m->origin_upper_left =

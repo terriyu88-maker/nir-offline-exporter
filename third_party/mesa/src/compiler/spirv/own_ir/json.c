@@ -947,8 +947,9 @@ own_ir_print_json(struct nir_shader *nir, FILE *fp, const char *api)
    jw_key_u(&j, "schema_version", 1);
    jw_key_str(&j, "mesa_git", m->mesa_version ? m->mesa_version : own_ir_mesa_version());
    jw_key_str(&j, "stage", mesa_shader_stage_name(m->stage));
-   jw_key_str(&j, "api", api);
-   jw_key_str(&j, "name", m->name);
+    jw_key_str(&j, "api", api);
+    if (m->name)
+       jw_key_str(&j, "name", m->name);
    jw_key(&j, "source_blake3");
    jw_begin_arr(&j);
    for (unsigned i = 0; i < 32; i++) {
@@ -1843,7 +1844,12 @@ own_ir_from_json(void *mem_ctx, const char *path, char **err)
    struct own_ir_module *m = own_ir_module_create(mem_ctx);
    m->mesa_version = jr_strdup(m->mem_ctx, json_object_get_string(o, "mesa_git"));
    m->stage = parse_stage(json_object_get_string(o, "stage"));
-   m->name = jr_strdup(m->mem_ctx, json_object_get_string(o, "name"));
+    if (json_object_has_value(o, "name")) {
+       const char *nm = json_object_get_string(o, "name");
+       m->name = nm ? jr_strdup(m->mem_ctx, nm) : NULL;
+    } else {
+       m->name = NULL;
+    }
    {
       JSON_Array *b3 = json_object_get_array(o, "source_blake3");
       if (b3) {

@@ -1,0 +1,42 @@
+; SPIR-V
+; Fragment: if (v > 0.5) c = 1.0 else c = 0.0; o = c
+; Uses OpPhi so L1 still has a NIR phi.
+; Magic: 0x07230203
+OpCapability Shader
+%1 = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %v %o
+OpExecutionMode %main OriginUpperLeft
+OpName %main "main"
+OpName %v "v"
+OpName %o "o"
+OpDecorate %v Location 0
+OpDecorate %o Location 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%float = OpTypeFloat 32
+%bool = OpTypeBool
+%v4 = OpTypeVector %float 4
+%ptr_in = OpTypePointer Input %float
+%ptr_out = OpTypePointer Output %v4
+%v = OpVariable %ptr_in Input
+%o = OpVariable %ptr_out Output
+%half = OpConstant %float 0.5
+%one = OpConstant %float 1.0
+%zero = OpConstant %float 0.0
+%main = OpFunction %void None %fn
+%entry = OpLabel
+%ld = OpLoad %float %v
+%cmp = OpFOrdGreaterThan %bool %ld %half
+OpSelectionMerge %merge None
+OpBranchConditional %cmp %then %else
+%then = OpLabel
+OpBranch %merge
+%else = OpLabel
+OpBranch %merge
+%merge = OpLabel
+%phi = OpPhi %float %one %then %zero %else
+%vec = OpCompositeConstruct %v4 %phi %phi %phi %phi
+OpStore %o %vec
+OpReturn
+OpFunctionEnd

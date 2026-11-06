@@ -1,0 +1,42 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0xb91a861f, 0xd03ca779, 0x8285e688, 0x26d3bd0d, 0xdac2228c, 0xcd425d27, 0xc494fb97, 0x86a80333}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+decl_var shader_in INTERP_MODE_NONE none vec4 v_color (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o_color (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:  // preds:
+    32    %0 = deref_var &v_color (shader_in vec4)
+    32x4  %1 = @load_deref (%0) (access=none)
+    32    %2 = load_const (0x00000000 = 0.000000)
+    1     %3 = flt %1.w, %2 (0.000000) // preserve:inf,nan
+               // succs: b1 b2
+    if %3 {
+        block b1:// preds: b0
+        @terminate
+        // succs: b3
+    } else {
+        block b2:  // preds: b0, succs: b3
+    }
+    block b3:  // preds: b1 b2
+    32    %4 = load_const (0x3f000000 = 0.500000)
+    1     %5 = flt %1.w, %4 (0.500000) // preserve:inf,nan
+               // succs: b4 b5
+    if %5 {
+        block b4:// preds: b3
+        @demote
+        // succs: b6
+    } else {
+        block b5:  // preds: b3, succs: b6
+    }
+    block b6:  // preds: b4 b5
+    32    %6 = deref_var &o_color (shader_out vec4)
+               @store_deref (%6, %1) (wrmask=xyzw, access=none)
+               // succs: b7
+    block b7:
+}
+

@@ -16,11 +16,15 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `shaders/ubo.vert` | Golden 3: UBO vertex |
 | `shaders/ifloop.frag` | Golden 4: if / loop fragment |
 | `shaders/ssbo.comp` | Golden 5: SSBO atomic compute |
+| `shaders/phi.frag.spvasm` | Golden 6: fragment with `OpPhi` (needs `--optimize`) |
+| `shaders/discard.frag` | Golden 7: `discard` + `demote` fragment |
 | `out/min.frag.nir.txt` | Sample `nir_print_shader()` dump |
 | `out/tex.frag.nir.txt` | Golden 2 Mesa dump |
 | `out/ubo.vert.nir.txt` | Golden 3 Mesa dump |
 | `out/ifloop.frag.nir.txt` | Golden 4 Mesa dump |
 | `out/ssbo.comp.nir.txt` | Golden 5 Mesa dump |
+| `out/phi.frag.nir.txt` | Golden 6 Mesa dump (`--optimize`) |
+| `out/discard.frag.nir.txt` | Golden 7 Mesa dump |
 
 ## Cross-build (Linux → Windows PE)
 
@@ -101,4 +105,4 @@ Writes `dist/spirv2nir/spirv2nir.exe`, `libwinpthread-1.dll`, and `README.txt`. 
 
 ## Status
 
-Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–5. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.
+Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–7. Golden 6 (`shaders/phi.frag.spv`) needs `--optimize` so Mesa keeps a NIR `phi`. Golden 7 maps GLSL `discard` to `@terminate` and `demote` to `@demote`. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.

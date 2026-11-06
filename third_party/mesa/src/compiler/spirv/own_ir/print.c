@@ -306,24 +306,30 @@ print_alu_src(FILE *fp, const struct own_ir_alu *alu, unsigned src_i)
                             src->const_bit_size, type);
     }
 
-   bool print_swizzle = false;
-   unsigned used_channels = 0;
-   unsigned dest_nc = alu->dest.num_components;
-   unsigned live = src->src_components ? src->src_components : dest_nc;
-   unsigned out_size = nir_op_infos[alu->op].output_size;
-   unsigned used = out_size ? dest_nc : dest_nc;
+    bool print_swizzle = false;
+    unsigned used_channels = 0;
+    unsigned dest_nc = alu->dest.num_components;
+    unsigned live = src->src_components ? src->src_components : dest_nc;
+    unsigned used = nir_op_infos[alu->op].input_sizes[src_i];
+    if (used == 0)
+       used = dest_nc;
 
-   for (unsigned i = 0; i < used && i < NIR_MAX_VEC_COMPONENTS; i++) {
-      used_channels++;
-      if (src->swizzle[i] != i)
-         print_swizzle = true;
-   }
-    if (print_swizzle || used_channels != live) {
-       fputc('.', fp);
-       const char *xyzw = comp_mask_string(live);
-       for (unsigned i = 0; i < used && i < NIR_MAX_VEC_COMPONENTS; i++)
-          fputc(xyzw[src->swizzle[i]], fp);
+    for (unsigned i = 0; i < NIR_MAX_VEC_COMPONENTS; i++) {
+       if (i >= used)
+          continue;
+       used_channels++;
+       if (src->swizzle[i] != i)
+          print_swizzle = true;
     }
+     if (print_swizzle || used_channels != live) {
+        fputc('.', fp);
+        const char *xyzw = comp_mask_string(live);
+        for (unsigned i = 0; i < NIR_MAX_VEC_COMPONENTS; i++) {
+           if (i >= used)
+              continue;
+           fputc(xyzw[src->swizzle[i]], fp);
+        }
+     }
 }
 
 static void

@@ -216,6 +216,13 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
   - [x] 13.4 `@deref_atomic`：`access=coherent`、`atomic_op=iadd`
   - [x] 13.5 Wine：`ssbo.comp.spv` 以及黄金件 1–4 回归，`diff` 均为空
 
+- [x] 14. 检查点：黄金件 6（带 `phi` 的合流 FS）
+  - [x] 14.1 `shaders/phi.frag.spvasm`：手写 `OpPhi`；默认 L1 会把 phi 降成 function_temp，对照用 `--optimize`
+  - [x] 14.2 空 `name`：`nir->info.name == NULL` 不打印 `name:`；空串 `""` 仍打印 `name: `（与 Mesa 一致）
+  - [x] 14.3 ALU：`vecN` 源通道按 `nir_op_infos[].input_sizes`（`nir_ssa_alu_instr_src_components`），标量进 `vec4` 不打 `.xyzw`
+  - [x] 14.4 JSON：`name` 缺省表示 NULL；读回后打印机与 dump 一致
+  - [x] 14.5 Wine：`--optimize` 下 mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–5 回归
+
 ### 阶段 3：JSON 导出（对照格式）
 
 **做：**
@@ -290,10 +297,43 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 3. 带 UBO 的 VS
 4. 带分支/循环的 FS
 5. 带 SSBO/原子的 CS
+6. 带 `OpPhi` 的 FS（`--optimize`，保留 NIR `phi`）
+7. 带 `discard` / `demote` 的 FS（`@terminate` + `@demote`）
 
 文本允许的唯一差异：无。SSA 编号必须与 `nir_print_shader` 一致，因此遍历顺序固定。JSON 必须稳定编号。
 
 每次改遍历器、打印机或 schema，跑黄金件 diff。
+
+### 常见缺口（后续黄金件）
+
+黄金件 1–7 覆盖了 FS / VS / CS 主路径：ALU、2D `tex`、UBO、if/loop、SSBO atomic、`--optimize` 下的 `phi`、`discard`/`demote`。下面这些在真实 Vulkan/GLSL 里很常见，当前没有黄金件，walker/打印机只按通用路径走，未对照过 dump。
+
+每个缺口单独一份 shader；验收与现有黄金件相同：`--emit ours` 与 Mesa dump `diff` 空，JSON 读回再打印仍空。改 walker / 打印机 / schema 后，新旧黄金件一起回归。
+
+- [x] 7. `discard` / `demote`（alpha 测试 FS）
+  - [x] 7.1 `shaders/discard.frag`：`GL_EXT_demote_to_helper_invocation`；`a < 0` 走 `discard`，`a < 0.5` 走 `demote`
+  - [x] 7.2 L1 默认 `discard_is_demote=false`：GLSL `discard` → `@terminate`，`demote` → `@demote`；头里无 `uses_discard`（未跑 `nir_shader_gather_info`）
+  - [x] 7.3 两条都在 if 内，else 为空块；后续仍 `@store_deref` 颜色
+  - [x] 7.4 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–6 回归
+- [ ] 8. push constant（VS 或 FS）：`nir_var_mem_push_const`、`deref` + `@load_deref`
+- [ ] 9. 纹理变体（在黄金件 2 的 2D `tex` 之外）
+  - [ ] 9.1 cube / 2D array / 3D / shadow：`samplerCube`、`sampler2DArray`、`sampler2DShadow`
+  - [ ] 9.2 `textureLod` / `textureGrad` / `textureOffset` / `texelFetch` / `textureGather`：`txl` / `txd` / `txf` / `tg4`
+- [ ] 10. image load/store（CS 或 FS）：`image2D` 的 `@image_deref_load` / `@image_deref_store`（与 SSBO atomic 分开）
+- [ ] 11. shared + barrier（CS）：`shared` 数组、`@barrier`、`memory_scope` / `memory_semantics`
+- [ ] 12. 常用 system value
+  - [ ] 12.1 FS：`gl_FragCoord`、`gl_FrontFacing`、`gl_FragDepth`
+  - [ ] 12.2 VS：`gl_VertexIndex`、`gl_InstanceIndex`
+- [ ] 13. 插值修饰：`flat` / `noperspective`（`INTERP_MODE_*` 不是 `NONE`）
+- [ ] 14. 几何阶段（整 stage 尚未打到）
+  - [ ] 14.1 GS：`EmitVertex` / `EndPrimitive`，`gl_Position` 写出
+  - [ ] 14.2 TCS / TES：`gl_TessLevel*`、`gl_TessCoord`、patch 变量
+- [ ] 15. 默认 L1 的 `OpPhi`：不加 `--optimize`，SPIR-V 前端把 phi 降成 `function_temp` store/load（与黄金件 6 对照）
+- [ ] 16. `undef` 与未定义 SSA：显式 `nir_undef` 或未写满的 phi 源
+- [ ] 17. `switch` / `continue`：多路分支、循环 `continue`（黄金件 4 只有 if + for-break）
+- [ ] 18. input attachment（subpass FS）：`subpassLoad`、`@load_output` / input attachment deref
+- [ ] 19. 整数 / 转换：`int`/`uint` 算术、`floatBitsToUint` / `bitcast`、8/16/64-bit
+- [ ] 20. UBO 动态索引：`ubo[i].member` 或 `ubo.arr[nonconst]`（黄金件 3 是常量偏移 mat4）
 
 ## 5. 建议工期（一人，熟悉 Mesa）
 

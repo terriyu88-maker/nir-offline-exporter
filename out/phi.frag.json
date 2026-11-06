@@ -1,0 +1,432 @@
+{
+  "schema_version": 1,
+  "mesa_git": "26.2.5",
+  "stage": "MESA_SHADER_FRAGMENT",
+  "api": "vulkan",
+  "source_blake3": [
+    165,
+    146,
+    70,
+    146,
+    74,
+    83,
+    249,
+    26,
+    148,
+    133,
+    244,
+    97,
+    154,
+    185,
+    153,
+    177,
+    30,
+    82,
+    213,
+    11,
+    223,
+    211,
+    201,
+    88,
+    194,
+    89,
+    124,
+    78,
+    199,
+    230,
+    6,
+    111
+  ],
+  "max_subgroup_size": 128,
+  "min_subgroup_size": 1,
+  "origin_upper_left": true,
+  "workgroup_size": [
+    0,
+    0,
+    0
+  ],
+  "workgroup_size_variable": false,
+  "num_inputs": 0,
+  "num_outputs": 0,
+  "num_uniforms": 0,
+  "num_textures": 0,
+  "num_ubos": 0,
+  "num_abos": 0,
+  "num_ssbos": 0,
+  "num_images": 0,
+  "scratch_size": 0,
+  "variables": [
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "float",
+      "type_components": 1,
+      "name": "v",
+      "location": 32,
+      "location_frac": 0,
+      "component_mask": 1,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_out",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "o",
+      "location": 4,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "is_entrypoint": true,
+      "ssa_alloc": 9,
+      "locals": [],
+      "body": [
+        {
+          "kind": "block",
+          "block": {
+            "index": 0,
+            "label": "b0",
+            "preds": [],
+            "succs": [
+              "b1",
+              "b2"
+            ],
+            "instrs": [
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 0,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "float",
+                  "var_name": "v"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 1,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 1,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "load_const",
+                "load_const": {
+                  "dest": {
+                    "index": 2,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "raw": [
+                    1056964608
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 3,
+                    "bit_size": 1,
+                    "num_components": 1
+                  },
+                  "op": "flt",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 6,
+                  "srcs": [
+                    {
+                      "ssa": 2,
+                      "is_const": true,
+                      "const_components": 1,
+                      "const_bit_size": 32,
+                      "const_u32": [
+                        1056964608
+                      ],
+                      "src_components": 1,
+                      "swizzle": [
+                        0
+                      ]
+                    },
+                    {
+                      "ssa": 1,
+                      "is_const": false,
+                      "src_components": 1,
+                      "swizzle": [
+                        0
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "kind": "if",
+          "if": {
+            "cond": {
+              "ssa": 3,
+              "is_const": false
+            },
+            "control": "nir_selection_control_none",
+            "then": [
+              {
+                "kind": "block",
+                "block": {
+                  "index": 1,
+                  "label": "b1",
+                  "preds": [
+                    "b0"
+                  ],
+                  "succs": [
+                    "b3"
+                  ],
+                  "instrs": [
+                    {
+                      "kind": "load_const",
+                      "load_const": {
+                        "dest": {
+                          "index": 4,
+                          "bit_size": 32,
+                          "num_components": 1
+                        },
+                        "raw": [
+                          1065353216
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "else": [
+              {
+                "kind": "block",
+                "block": {
+                  "index": 2,
+                  "label": "b2",
+                  "preds": [
+                    "b0"
+                  ],
+                  "succs": [
+                    "b3"
+                  ],
+                  "instrs": [
+                    {
+                      "kind": "load_const",
+                      "load_const": {
+                        "dest": {
+                          "index": 5,
+                          "bit_size": 32,
+                          "num_components": 1
+                        },
+                        "raw": [
+                          0
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "kind": "block",
+          "block": {
+            "index": 3,
+            "label": "b3",
+            "preds": [
+              "b1",
+              "b2"
+            ],
+            "succs": [
+              "b4"
+            ],
+            "instrs": [
+              {
+                "kind": "phi",
+                "phi": {
+                  "dest": {
+                    "index": 6,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "srcs": [
+                    {
+                      "pred": "b1",
+                      "ssa": 4,
+                      "is_const": true,
+                      "const_components": 1,
+                      "const_bit_size": 32,
+                      "const_u32": [
+                        1065353216
+                      ]
+                    },
+                    {
+                      "pred": "b2",
+                      "ssa": 5,
+                      "is_const": true,
+                      "const_components": 1,
+                      "const_bit_size": 32,
+                      "const_u32": [
+                        0
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 7,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "vec4",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "src_components": 1,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "src_components": 1,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "src_components": 1,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "src_components": 1,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 8,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_out"
+                  ],
+                  "type": "vec4",
+                  "var_name": "o"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 8,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 7,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "end_block": {
+        "index": 4,
+        "label": "b4",
+        "is_end_block": true,
+        "preds": [
+          "b3"
+        ],
+        "succs": [],
+        "instrs": []
+      }
+    }
+  ]
+}
