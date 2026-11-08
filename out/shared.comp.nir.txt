@@ -1,0 +1,43 @@
+shader: MESA_SHADER_COMPUTE
+source_blake3: {0xf9811c1f, 0x56bc78d8, 0x976e3154, 0x31d59586, 0x5e3f99c7, 0x27d938b3, 0x910f3bcb, 0x99961c8a}
+name: 
+workgroup_size: 64, 1, 1
+num_ssbos: 1
+max_subgroup_size: 128
+min_subgroup_size: 1
+decl_var system INTERP_MODE_NONE none uvec3 gl_LocalInvocationID (SYSTEM_VALUE_LOCAL_INVOCATION_ID)
+decl_var ssbo INTERP_MODE_NONE restrict SSBO s (~0, 0, 0)
+decl_var shared INTERP_MODE_NONE none uint[64] tile
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none uint i
+    block b0:   // preds:
+    32     %0 = deref_var &gl_LocalInvocationID (system uvec3)
+    32x3   %1 = @load_deref (%0) (access=none)
+    32     %2 = mov %1.x
+    32     %3 = deref_var &i (function_temp uint)
+                @store_deref (%3, %2) (wrmask=x, access=none)
+    32     %4 = @load_deref (%3) (access=none)
+    32     %5 = @load_deref (%3) (access=none)
+    32     %6 = load_const (0x00000000 = 0.000000)
+    32     %7 = @vulkan_resource_index (%6 (0x0)) (desc_set=0, binding=0, desc_type=SSBO, resource_type=RW-SSBO)
+    32     %8 = @load_vulkan_descriptor (%7) (desc_type=SSBO)
+    32     %9 = deref_cast (SSBO *)%8 (ssbo SSBO)  (ptr_stride=0, align_mul=0, align_offset=0)
+    32    %10 = deref_struct &%9->data (ssbo uint[])  // &((SSBO *)%8)->data
+    32    %11 = deref_array &(*%10)[%5] (ssbo uint)  (in bounds)  // &((SSBO *)%8)->data[%5]
+    32    %12 = @load_deref (%11) (access=none)
+    32    %13 = deref_var &tile (shared uint[64])
+    32    %14 = deref_array &(*%13)[%4] (shared uint)  // &tile[%4]
+                @store_deref (%14, %12) (wrmask=x, access=none)
+                @barrier (execution_scope=WORKGROUP, memory_scope=WORKGROUP, mem_semantics=ACQ|REL, mem_modes=shared)
+    32    %15 = @load_deref (%3) (access=none)
+    32    %16 = @load_deref (%3) (access=none)
+    32    %17 = deref_array &(*%13)[%16] (shared uint)  // &tile[%16]
+    32    %18 = @load_deref (%17) (access=none)
+    32    %19 = deref_array &(*%10)[%15] (ssbo uint)  (in bounds)  // &((SSBO *)%8)->data[%15]
+                @store_deref (%19, %18) (wrmask=x, access=none)
+                // succs: b1
+    block b1:
+}
+

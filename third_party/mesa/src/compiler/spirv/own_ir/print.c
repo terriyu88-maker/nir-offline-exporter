@@ -1,6 +1,7 @@
 #include "ir.h"
 
 #include "compiler/shader_enums.h"
+#include "util/format/u_format.h"
 #include "util/mesa-blake3.h"
 
 #include <inttypes.h>
@@ -796,9 +797,11 @@ print_var(FILE *fp, const struct own_ir_module *m, const struct own_ir_var *var)
    fprintf(fp, "decl_var %s %s ",
            mode_str(var->mode, false),
            glsl_interp_mode_name(var->interpolation));
-    print_access(fp, var->access, " ");
-    fputc(' ', fp);
-    fprintf(fp, "%s %s", var->type_name ? var->type_name : "", var->name);
+     print_access(fp, var->access, " ");
+     fputc(' ', fp);
+     if (var->image_format_name && var->image_format_name[0])
+        fprintf(fp, "%s ", var->image_format_name);
+     fprintf(fp, "%s %s", var->type_name ? var->type_name : "", var->name);
 
      if (m && (var->mode & (nir_var_shader_in | nir_var_shader_out |
                      nir_var_uniform | nir_var_system_value |
@@ -991,17 +994,95 @@ print_instr(FILE *fp, const struct own_ir_instr *instr, unsigned tabs,
                          resource_type_name((nir_resource_type)
                             intr->const_index[info->index_map[idx] - 1]));
                  break;
-              case NIR_INTRINSIC_ATOMIC_OP:
-                 fprintf(fp, "atomic_op=%s",
-                         atomic_op_name((nir_atomic_op)
-                            intr->const_index[info->index_map[idx] - 1]));
+               case NIR_INTRINSIC_ATOMIC_OP:
+                  fprintf(fp, "atomic_op=%s",
+                          atomic_op_name((nir_atomic_op)
+                             intr->const_index[info->index_map[idx] - 1]));
+                  break;
+               case NIR_INTRINSIC_IMAGE_DIM:
+                  fprintf(fp, "image_dim=%s",
+                          sampler_dim_str((enum glsl_sampler_dim)
+                             intr->const_index[info->index_map[idx] - 1]));
+                  break;
+               case NIR_INTRINSIC_IMAGE_ARRAY:
+                  fprintf(fp, "image_array=%s",
+                          intr->const_index[info->index_map[idx] - 1]
+                             ? "true" : "false");
+                  break;
+               case NIR_INTRINSIC_FORMAT:
+                  fprintf(fp, "format=%s",
+                          util_format_short_name((enum pipe_format)
+                             intr->const_index[info->index_map[idx] - 1]));
+                  break;
+               case NIR_INTRINSIC_SRC_TYPE:
+                  fputs("src_type=", fp);
+                  print_alu_type_name(fp, (nir_alu_type)
+                     intr->const_index[info->index_map[idx] - 1]);
+                  break;
+               case NIR_INTRINSIC_DEST_TYPE:
+                  fputs("dest_type=", fp);
+                  print_alu_type_name(fp, (nir_alu_type)
+                     intr->const_index[info->index_map[idx] - 1]);
+                  break;
+               case NIR_INTRINSIC_MEMORY_SEMANTICS: {
+                  unsigned semantics =
+                     (unsigned)intr->const_index[info->index_map[idx] - 1];
+                  fputs("mem_semantics=", fp);
+                  switch (semantics & (NIR_MEMORY_ACQUIRE | NIR_MEMORY_RELEASE)) {
+                  case 0:
+                     fputs("NONE", fp);
+                     break;
+                  case NIR_MEMORY_ACQUIRE:
+                     fputs("ACQ", fp);
+                     break;
+                  case NIR_MEMORY_RELEASE:
+                     fputs("REL", fp);
+                     break;
+                  default:
+                     fputs("ACQ|REL", fp);
+                     break;
+                  }
+                  if (semantics & NIR_MEMORY_MAKE_AVAILABLE)
+                     fputs("|AVAILABLE", fp);
+                  if (semantics & NIR_MEMORY_MAKE_VISIBLE)
+                     fputs("|VISIBLE", fp);
+                  if (semantics & NIR_MEMORY_CONTROL_ARRIVE)
+                     fputs("|ARRIVE", fp);
+                  if (semantics & NIR_MEMORY_CONTROL_WAIT)
+                     fputs("|WAIT", fp);
+                  break;
+               }
+               case NIR_INTRINSIC_MEMORY_MODES: {
+                  unsigned modes =
+                     (unsigned)intr->const_index[info->index_map[idx] - 1];
+                  fputs("mem_modes=", fp);
+                  if (modes == 0)
+                     fputc('0', fp);
+                  while (modes) {
+                     int bit = u_bit_scan(&modes);
+                     fprintf(fp, "%s%s",
+                             mode_str((nir_variable_mode)(1u << bit), true),
+                             modes ? "|" : "");
+                  }
+                  break;
+               }
+               case NIR_INTRINSIC_EXECUTION_SCOPE:
+               case NIR_INTRINSIC_MEMORY_SCOPE: {
+                  mesa_scope scope =
+                     (mesa_scope)intr->const_index[info->index_map[idx] - 1];
+                  const char *name = mesa_scope_name(scope);
+                  static const char prefix[] = "SCOPE_";
+                  if (strncmp(name, prefix, sizeof(prefix) - 1) == 0)
+                     name += sizeof(prefix) - 1;
+                  fprintf(fp, "%s=%s", nir_intrinsic_index_names[idx], name);
+                  break;
+               }
+               default: {
+                 unsigned off = info->index_map[idx] - 1;
+                 fprintf(fp, "%s=%d", nir_intrinsic_index_names[idx],
+                         intr->const_index[off]);
                  break;
-              default: {
-                unsigned off = info->index_map[idx] - 1;
-                fprintf(fp, "%s=%d", nir_intrinsic_index_names[idx],
-                        intr->const_index[off]);
-                break;
-             }
+              }
              }
           }
           if (info->num_indices)
@@ -1287,8 +1368,10 @@ own_ir_print_module(const struct own_ir_module *m, FILE *fp)
        fprintf(fp, "num_images: %u\n", m->num_images);
     fprintf(fp, "max_subgroup_size: %u\n", m->max_subgroup_size);
     fprintf(fp, "min_subgroup_size: %u\n", m->min_subgroup_size);
-   if (m->origin_upper_left)
-      fputs("origin_upper_left: true\n", fp);
+    if (m->origin_upper_left)
+       fputs("origin_upper_left: true\n", fp);
+    if (m->depth_layout)
+       fprintf(fp, "depth_layout: %u\n", m->depth_layout);
    if (m->num_inputs)
       fprintf(fp, "inputs: %u\n", m->num_inputs);
    if (m->num_outputs)

@@ -1,0 +1,40 @@
+shader: MESA_SHADER_COMPUTE
+source_blake3: {0x2919a259, 0xee5c3e46, 0x12437677, 0xbc9bb095, 0x651826e5, 0xb19acebd, 0x5aa98dc0, 0xb385cf40}
+name: 
+workgroup_size: 8, 8, 1
+max_subgroup_size: 128
+min_subgroup_size: 1
+decl_var system INTERP_MODE_NONE none uvec3 gl_GlobalInvocationID (SYSTEM_VALUE_GLOBAL_INVOCATION_ID)
+decl_var image INTERP_MODE_NONE restrict readonly r32g32b32a32_float image2D u_in (~0, 0, 0)
+decl_var image INTERP_MODE_NONE restrict writeonly r32g32b32a32_float image2D u_out (~0, 0, 1)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none ivec2 p
+    decl_var  INTERP_MODE_NONE none vec4 c
+    block b0:   // preds:
+    32     %0 = undefined
+    32     %1 = undefined
+    32     %2 = undefined
+    32     %3 = undefined
+    32     %4 = deref_var &gl_GlobalInvocationID (system uvec3)
+    32x3   %5 = @load_deref (%4) (access=none)
+    32x2   %6 = vec2 %5.x, %5.y
+    32     %7 = deref_var &p (function_temp ivec2)
+                @store_deref (%7, %6) (wrmask=xy, access=none)
+    32     %8 = deref_var &u_in (image image2D)
+    32x2   %9 = @load_deref (%7) (access=none)
+    32x4  %10 = vec4 %9.x, %9.y, %3, %3
+    32    %11 = load_const (0x00000000 = 0.000000)
+    32x4  %12 = @image_deref_load (%8, %10, %2, %11 (0x0)) (image_dim=2D, image_array=false, format=r32g32b32a32_float, access=none, dest_type=float32)
+    32    %13 = deref_var &c (function_temp vec4)
+                @store_deref (%13, %12) (wrmask=xyzw, access=none)
+    32    %14 = deref_var &u_out (image image2D)
+    32x2  %15 = @load_deref (%7) (access=none)
+    32x4  %16 = @load_deref (%13) (access=none)
+    32x4  %17 = vec4 %15.x, %15.y, %1, %1
+                @image_deref_store (%14, %17, %0, %16, %11 (0x0)) (image_dim=2D, image_array=false, format=r32g32b32a32_float, access=none, src_type=float32)
+                // succs: b1
+    block b1:
+}
+

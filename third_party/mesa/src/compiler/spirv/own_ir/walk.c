@@ -1,5 +1,6 @@
 #include "ir.h"
 
+#include "util/format/u_format.h"
 #include "util/hash_table.h"
 #include "util/set.h"
 
@@ -126,10 +127,14 @@ fill_var(struct own_ir_var *ov, struct own_ir_module *m, nir_variable *var,
    ov->location = var->data.location;
    ov->location_frac = var->data.location_frac;
    ov->driver_location = var->data.driver_location;
-   ov->binding = var->data.binding;
-   ov->access = var->data.access;
+    ov->binding = var->data.binding;
+    ov->access = var->data.access;
+    ov->image_format_name = NULL;
+    if (var->type &&
+        glsl_get_base_type(glsl_without_array(var->type)) == GLSL_TYPE_IMAGE)
+       ov->image_format_name = util_format_short_name(var->data.image.format);
 
-   unsigned num_components = ov->type_components;
+    unsigned num_components = ov->type_components;
    if (num_components > 0 && num_components < 16)
       ov->component_mask = ((1u << num_components) - 1) << var->data.location_frac;
    else
@@ -564,8 +569,10 @@ own_ir_walk(struct nir_shader *nir)
    m->name = nir->info.name;
    m->max_subgroup_size = nir->info.max_subgroup_size;
    m->min_subgroup_size = nir->info.min_subgroup_size;
-   m->origin_upper_left =
-      nir->info.stage == MESA_SHADER_FRAGMENT && nir->info.fs.origin_upper_left;
+    m->origin_upper_left =
+       nir->info.stage == MESA_SHADER_FRAGMENT && nir->info.fs.origin_upper_left;
+    m->depth_layout =
+       nir->info.stage == MESA_SHADER_FRAGMENT ? nir->info.fs.depth_layout : 0;
    m->workgroup_size[0] = nir->info.workgroup_size[0];
    m->workgroup_size[1] = nir->info.workgroup_size[1];
    m->workgroup_size[2] = nir->info.workgroup_size[2];

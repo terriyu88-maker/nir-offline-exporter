@@ -1,0 +1,55 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0xf07fa9af, 0x11ab8219, 0x284b1873, 0xc3ea3a1c, 0x0aca86be, 0xe1503aa9, 0x2520c2c1, 0x488c9783}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+decl_var uniform INTERP_MODE_NONE restrict sampler2D u_tex (~0, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec2 v_uv (VARYING_SLOT_VAR0.xy, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none float v_lod (VARYING_SLOT_VAR1.x, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec2 v_ddx (VARYING_SLOT_VAR2.xy, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec2 v_ddy (VARYING_SLOT_VAR3.xy, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o_color (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none vec4 c
+    block b0:   // preds:
+    32     %0 = deref_var &u_tex (uniform sampler2D)
+    32     %1 = deref_var &v_uv (shader_in vec2)
+    32x2   %2 = @load_deref (%1) (access=none)
+    32     %3 = deref_var &v_lod (shader_in float)
+    32     %4 = @load_deref (%3) (access=none)
+    32x4   %5 = (float32)txl %0 (texture_deref), %0 (sampler_deref), %2 (coord), %4 (lod), 2D
+    32     %6 = deref_var &c (function_temp vec4)
+                @store_deref (%6, %5) (wrmask=xyzw, access=none)
+    32     %7 = deref_var &v_ddx (shader_in vec2)
+    32x2   %8 = @load_deref (%7) (access=none)
+    32     %9 = deref_var &v_ddy (shader_in vec2)
+    32x2  %10 = @load_deref (%9) (access=none)
+    32x4  %11 = (float32)txd %0 (texture_deref), %0 (sampler_deref), %2 (coord), %8 (ddx), %10 (ddy), 2D
+    32x4  %12 = @load_deref (%6) (access=none)
+    32x4  %13 = fadd %12, %11
+                @store_deref (%6, %13) (wrmask=xyzw, access=none)
+    32x2  %14 = load_const (0x00000001, 0x00000000)
+    32x4  %15 = (float32)tex %0 (texture_deref), %0 (sampler_deref), %2 (coord), %14 (0x1, 0x0) (offset), 2D
+    32x4  %16 = @load_deref (%6) (access=none)
+    32x4  %17 = fadd %16, %15
+                @store_deref (%6, %17) (wrmask=xyzw, access=none)
+    32x2  %18 = f2i32 %2
+    32    %19 = load_const (0x00000000)
+    32x4  %20 = (float32)txf %0 (texture_deref), %18 (coord), %19 (0x0) (lod), 2D
+    32x4  %21 = @load_deref (%6) (access=none)
+    32x4  %22 = fadd %21, %20
+                @store_deref (%6, %22) (wrmask=xyzw, access=none)
+    32x4  %23 = (float32)tg4 %0 (texture_deref), %0 (sampler_deref), %2 (coord), 0 (gather_component), 2D
+    32x4  %24 = @load_deref (%6) (access=none)
+    32x4  %25 = fadd %24, %23
+                @store_deref (%6, %25) (wrmask=xyzw, access=none)
+    32x4  %26 = @load_deref (%6) (access=none)
+    32    %27 = deref_var &o_color (shader_out vec4)
+                @store_deref (%27, %26) (wrmask=xyzw, access=none)
+                // succs: b1
+    block b1:
+}
+

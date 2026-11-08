@@ -42,9 +42,10 @@ struct own_ir_var {
    int location;
    unsigned location_frac;
    unsigned component_mask;
-   unsigned driver_location;
-   unsigned binding;
-   unsigned access;
+    unsigned driver_location;
+    unsigned binding;
+    unsigned access;
+    const char *image_format_name;
 };
 
 struct own_ir_alu_src {
@@ -250,8 +251,9 @@ struct own_ir_module {
    const char *name;
    uint8_t max_subgroup_size;
    uint8_t min_subgroup_size;
-   bool origin_upper_left;
-   unsigned workgroup_size[3];
+    bool origin_upper_left;
+    unsigned depth_layout;
+    unsigned workgroup_size[3];
    bool workgroup_size_variable;
    const char *mesa_version;
    unsigned num_inputs;

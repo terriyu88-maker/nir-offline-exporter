@@ -1,0 +1,1159 @@
+{
+  "schema_version": 1,
+  "mesa_git": "26.2.5",
+  "stage": "MESA_SHADER_FRAGMENT",
+  "api": "vulkan",
+  "name": "",
+  "source_blake3": [
+    175,
+    169,
+    127,
+    240,
+    25,
+    130,
+    171,
+    17,
+    115,
+    24,
+    75,
+    40,
+    28,
+    58,
+    234,
+    195,
+    190,
+    134,
+    202,
+    10,
+    169,
+    58,
+    80,
+    225,
+    193,
+    194,
+    32,
+    37,
+    131,
+    151,
+    140,
+    72
+  ],
+  "max_subgroup_size": 128,
+  "min_subgroup_size": 1,
+  "origin_upper_left": true,
+  "workgroup_size": [
+    0,
+    0,
+    0
+  ],
+  "workgroup_size_variable": false,
+  "num_inputs": 0,
+  "num_outputs": 0,
+  "num_uniforms": 0,
+  "num_textures": 0,
+  "num_ubos": 0,
+  "num_abos": 0,
+  "num_ssbos": 0,
+  "num_images": 0,
+  "scratch_size": 0,
+  "variables": [
+    {
+      "mode": "nir_var_uniform",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "sampler2D",
+      "type_components": 1,
+      "name": "u_tex",
+      "location": -1,
+      "location_frac": 0,
+      "component_mask": 1,
+      "driver_location": 0,
+      "binding": 0,
+      "access": [
+        "ACCESS_RESTRICT"
+      ]
+    },
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec2",
+      "type_components": 2,
+      "name": "v_uv",
+      "location": 32,
+      "location_frac": 0,
+      "component_mask": 3,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "float",
+      "type_components": 1,
+      "name": "v_lod",
+      "location": 33,
+      "location_frac": 0,
+      "component_mask": 1,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec2",
+      "type_components": 2,
+      "name": "v_ddx",
+      "location": 34,
+      "location_frac": 0,
+      "component_mask": 3,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec2",
+      "type_components": 2,
+      "name": "v_ddy",
+      "location": 35,
+      "location_frac": 0,
+      "component_mask": 3,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_out",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "o_color",
+      "location": 4,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "is_entrypoint": true,
+      "ssa_alloc": 28,
+      "locals": [
+        {
+          "mode": "nir_var_function_temp",
+          "interpolation": "INTERP_MODE_NONE",
+          "type": "vec4",
+          "type_components": 4,
+          "name": "c",
+          "location": -1,
+          "location_frac": 0,
+          "component_mask": 15,
+          "driver_location": 0,
+          "binding": 0,
+          "access": []
+        }
+      ],
+      "body": [
+        {
+          "kind": "block",
+          "block": {
+            "index": 0,
+            "label": "b0",
+            "preds": [],
+            "succs": [
+              "b1"
+            ],
+            "instrs": [
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 0,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_uniform"
+                  ],
+                  "type": "sampler2D",
+                  "var_name": "u_tex"
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 1,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec2",
+                  "var_name": "v_uv"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 2,
+                    "bit_size": 32,
+                    "num_components": 2
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 2,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 1,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 3,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "float",
+                  "var_name": "v_lod"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 4,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 1,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 3,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "tex",
+                "tex": {
+                  "dest": {
+                    "index": 5,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_type": "nir_type_float32",
+                  "op": "nir_texop_txl",
+                  "sampler_dim": "GLSL_SAMPLER_DIM_2D",
+                  "is_array": false,
+                  "is_shadow": false,
+                  "is_sparse": false,
+                  "component": 0,
+                  "is_gather_implicit_lod": false,
+                  "skip_helpers": false,
+                  "texture_non_uniform": false,
+                  "sampler_non_uniform": false,
+                  "texture_index": 0,
+                  "sampler_index": 0,
+                  "need_sampler": true,
+                  "has_explicit_tg4_offsets": false,
+                  "backend_flags": 0,
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_texture_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_sampler_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_coord",
+                      "src_alu_type": "nir_type_float"
+                    },
+                    {
+                      "ssa": 4,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_lod",
+                      "src_alu_type": "nir_type_float"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 6,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_function_temp"
+                  ],
+                  "type": "vec4",
+                  "var_name": "c"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 5,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 7,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec2",
+                  "var_name": "v_ddx"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 8,
+                    "bit_size": 32,
+                    "num_components": 2
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 2,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 7,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 9,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec2",
+                  "var_name": "v_ddy"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 10,
+                    "bit_size": 32,
+                    "num_components": 2
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 2,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 9,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "tex",
+                "tex": {
+                  "dest": {
+                    "index": 11,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_type": "nir_type_float32",
+                  "op": "nir_texop_txd",
+                  "sampler_dim": "GLSL_SAMPLER_DIM_2D",
+                  "is_array": false,
+                  "is_shadow": false,
+                  "is_sparse": false,
+                  "component": 0,
+                  "is_gather_implicit_lod": false,
+                  "skip_helpers": false,
+                  "texture_non_uniform": false,
+                  "sampler_non_uniform": false,
+                  "texture_index": 0,
+                  "sampler_index": 0,
+                  "need_sampler": true,
+                  "has_explicit_tg4_offsets": false,
+                  "backend_flags": 0,
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_texture_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_sampler_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_coord",
+                      "src_alu_type": "nir_type_float"
+                    },
+                    {
+                      "ssa": 8,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_ddx",
+                      "src_alu_type": "nir_type_float"
+                    },
+                    {
+                      "ssa": 10,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_ddy",
+                      "src_alu_type": "nir_type_float"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 12,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 13,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fadd",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 12,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 11,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 13,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "load_const",
+                "load_const": {
+                  "dest": {
+                    "index": 14,
+                    "bit_size": 32,
+                    "num_components": 2
+                  },
+                  "raw": [
+                    1,
+                    0
+                  ]
+                }
+              },
+              {
+                "kind": "tex",
+                "tex": {
+                  "dest": {
+                    "index": 15,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_type": "nir_type_float32",
+                  "op": "nir_texop_tex",
+                  "sampler_dim": "GLSL_SAMPLER_DIM_2D",
+                  "is_array": false,
+                  "is_shadow": false,
+                  "is_sparse": false,
+                  "component": 0,
+                  "is_gather_implicit_lod": false,
+                  "skip_helpers": false,
+                  "texture_non_uniform": false,
+                  "sampler_non_uniform": false,
+                  "texture_index": 0,
+                  "sampler_index": 0,
+                  "need_sampler": true,
+                  "has_explicit_tg4_offsets": false,
+                  "backend_flags": 0,
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_texture_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_sampler_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_coord",
+                      "src_alu_type": "nir_type_float"
+                    },
+                    {
+                      "ssa": 14,
+                      "is_const": true,
+                      "const_components": 2,
+                      "const_bit_size": 32,
+                      "const_u32": [
+                        1,
+                        0
+                      ],
+                      "src_type": "nir_tex_src_offset",
+                      "src_alu_type": "nir_type_int"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 16,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 17,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fadd",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 16,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 15,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 17,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 18,
+                    "bit_size": 32,
+                    "num_components": 2
+                  },
+                  "op": "f2i32",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "src_components": 2,
+                      "swizzle": [
+                        0,
+                        1
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "load_const",
+                "load_const": {
+                  "dest": {
+                    "index": 19,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "raw": [
+                    0
+                  ]
+                }
+              },
+              {
+                "kind": "tex",
+                "tex": {
+                  "dest": {
+                    "index": 20,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_type": "nir_type_float32",
+                  "op": "nir_texop_txf",
+                  "sampler_dim": "GLSL_SAMPLER_DIM_2D",
+                  "is_array": false,
+                  "is_shadow": false,
+                  "is_sparse": false,
+                  "component": 0,
+                  "is_gather_implicit_lod": false,
+                  "skip_helpers": false,
+                  "texture_non_uniform": false,
+                  "sampler_non_uniform": false,
+                  "texture_index": 0,
+                  "sampler_index": 0,
+                  "need_sampler": false,
+                  "has_explicit_tg4_offsets": false,
+                  "backend_flags": 0,
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_texture_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 18,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_coord",
+                      "src_alu_type": "nir_type_int"
+                    },
+                    {
+                      "ssa": 19,
+                      "is_const": true,
+                      "const_components": 1,
+                      "const_bit_size": 32,
+                      "const_u32": [
+                        0
+                      ],
+                      "src_type": "nir_tex_src_lod",
+                      "src_alu_type": "nir_type_int"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 21,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 22,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fadd",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 21,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 20,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 22,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "tex",
+                "tex": {
+                  "dest": {
+                    "index": 23,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_type": "nir_type_float32",
+                  "op": "nir_texop_tg4",
+                  "sampler_dim": "GLSL_SAMPLER_DIM_2D",
+                  "is_array": false,
+                  "is_shadow": false,
+                  "is_sparse": false,
+                  "component": 0,
+                  "is_gather_implicit_lod": false,
+                  "skip_helpers": false,
+                  "texture_non_uniform": false,
+                  "sampler_non_uniform": false,
+                  "texture_index": 0,
+                  "sampler_index": 0,
+                  "need_sampler": true,
+                  "has_explicit_tg4_offsets": false,
+                  "backend_flags": 0,
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_texture_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_sampler_deref",
+                      "src_alu_type": "nir_type_uint"
+                    },
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "src_type": "nir_tex_src_coord",
+                      "src_alu_type": "nir_type_float"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 24,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 25,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fadd",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 24,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 23,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 25,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 26,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 27,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_out"
+                  ],
+                  "type": "vec4",
+                  "var_name": "o_color"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 27,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 26,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "end_block": {
+        "index": 1,
+        "label": "b1",
+        "is_end_block": true,
+        "preds": [
+          "b0"
+        ],
+        "succs": [],
+        "instrs": []
+      }
+    }
+  ]
+}

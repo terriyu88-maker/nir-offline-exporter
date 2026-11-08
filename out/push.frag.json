@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "mesa_git": "26.2.5",
+  "stage": "MESA_SHADER_FRAGMENT",
+  "api": "vulkan",
+  "name": "",
+  "source_blake3": [
+    23,
+    92,
+    176,
+    238,
+    84,
+    247,
+    245,
+    160,
+    172,
+    142,
+    70,
+    151,
+    181,
+    185,
+    112,
+    248,
+    166,
+    89,
+    203,
+    81,
+    242,
+    208,
+    127,
+    117,
+    186,
+    89,
+    130,
+    108,
+    131,
+    152,
+    99,
+    135
+  ],
+  "max_subgroup_size": 128,
+  "min_subgroup_size": 1,
+  "origin_upper_left": true,
+  "workgroup_size": [
+    0,
+    0,
+    0
+  ],
+  "workgroup_size_variable": false,
+  "num_inputs": 0,
+  "num_outputs": 0,
+  "num_uniforms": 16,
+  "num_textures": 0,
+  "num_ubos": 0,
+  "num_abos": 0,
+  "num_ssbos": 0,
+  "num_images": 0,
+  "scratch_size": 0,
+  "variables": [
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "v_color",
+      "location": 32,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_out",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "o_color",
+      "location": 4,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_mem_push_const",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "Push",
+      "type_components": 0,
+      "name": "p",
+      "location": -1,
+      "location_frac": 0,
+      "component_mask": 0,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "is_entrypoint": true,
+      "ssa_alloc": 7,
+      "locals": [],
+      "body": [
+        {
+          "kind": "block",
+          "block": {
+            "index": 0,
+            "label": "b0",
+            "preds": [],
+            "succs": [
+              "b1"
+            ],
+            "instrs": [
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 0,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec4",
+                  "var_name": "v_color"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 1,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 2,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_mem_push_const"
+                  ],
+                  "type": "Push",
+                  "var_name": "p"
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 3,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_struct",
+                  "modes": [
+                    "nir_var_mem_push_const"
+                  ],
+                  "type": "vec4",
+                  "parent_ssa": 2,
+                  "struct_index": 0,
+                  "struct_field": "tint",
+                  "chain_comment": "p.tint"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 4,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 3,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 5,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fmul",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 1,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 4,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 6,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_out"
+                  ],
+                  "type": "vec4",
+                  "var_name": "o_color"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 6,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 5,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "end_block": {
+        "index": 1,
+        "label": "b1",
+        "is_end_block": true,
+        "preds": [
+          "b0"
+        ],
+        "succs": [],
+        "instrs": []
+      }
+    }
+  ]
+}

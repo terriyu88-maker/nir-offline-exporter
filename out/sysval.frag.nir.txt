@@ -1,0 +1,41 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0x7a0841a4, 0x665dc457, 0x1c4b4124, 0xe13ea16e, 0xed84539d, 0x9b83fa1f, 0x2cc95e1a, 0x76dd4b16}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+depth_layout: 1
+decl_var system INTERP_MODE_NONE none vec4 gl_FragCoord (SYSTEM_VALUE_FRAG_COORD)
+decl_var system INTERP_MODE_NONE none bool gl_FrontFacing (SYSTEM_VALUE_FRONT_FACE)
+decl_var shader_out INTERP_MODE_NONE none float gl_FragDepth (FRAG_RESULT_DEPTH.x, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o_color (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:   // preds:
+    32     %0 = deref_var &gl_FragCoord (system vec4)
+    32x4   %1 = @load_deref (%0) (access=none)
+    32     %2 = deref_var &o_color (shader_out vec4)
+                @store_deref (%2, %1) (wrmask=xyzw, access=none)
+    32     %3 = deref_var &gl_FrontFacing (system bool)
+    1      %4 = @load_deref (%3) (access=none)
+    1      %5 = inot %4
+                // succs: b1 b2
+    if %5 {
+        block b1:   // preds: b0
+        32     %6 = load_const (0x00000000 = 0.000000)
+        32x4   %7 = @load_deref (%2) (access=none)
+        32x4   %8 = vec4 %7.x, %7.y, %7.z, %6 (0x0)
+                    @store_deref (%2, %8) (wrmask=xyzw, access=none)
+                    // succs: b3
+    } else {
+        block b2:  // preds: b0, succs: b3
+    }
+    block b3:   // preds: b1 b2
+    32     %9 = mov %1.z
+    32    %10 = deref_var &gl_FragDepth (shader_out float)
+                @store_deref (%10, %9) (wrmask=x, access=none)
+                // succs: b4
+    block b4:
+}
+

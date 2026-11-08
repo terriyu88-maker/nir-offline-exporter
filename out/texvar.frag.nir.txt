@@ -1,0 +1,47 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0x6ab16da7, 0xa3256482, 0x59ce5559, 0x2743c3f0, 0x7030fb7a, 0xc604da08, 0xe78e53fe, 0x084fc660}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+decl_var uniform INTERP_MODE_NONE restrict samplerCube u_cube (~0, 0, 0)
+decl_var uniform INTERP_MODE_NONE restrict sampler2DArray u_arr (~0, 0, 1)
+decl_var uniform INTERP_MODE_NONE restrict sampler2D u_shad (~0, 0, 2)
+decl_var shader_in INTERP_MODE_NONE none vec3 v_dir (VARYING_SLOT_VAR0.xyz, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec3 v_uvw (VARYING_SLOT_VAR1.xyz, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec3 v_shad (VARYING_SLOT_VAR2.xyz, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o_color (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none vec4 c
+    block b0:   // preds:
+    32     %0 = deref_var &u_cube (uniform samplerCube)
+    32     %1 = deref_var &v_dir (shader_in vec3)
+    32x3   %2 = @load_deref (%1) (access=none)
+    32x4   %3 = (float32)tex %0 (texture_deref), %0 (sampler_deref), %2 (coord), Cube
+    32     %4 = deref_var &c (function_temp vec4)
+                @store_deref (%4, %3) (wrmask=xyzw, access=none)
+    32     %5 = deref_var &u_arr (uniform sampler2DArray)
+    32     %6 = deref_var &v_uvw (shader_in vec3)
+    32x3   %7 = @load_deref (%6) (access=none)
+    32x4   %8 = (float32)tex %5 (texture_deref), %5 (sampler_deref), %7 (coord), 2D
+    32x4   %9 = @load_deref (%4) (access=none)
+    32x4  %10 = fadd %9, %8
+                @store_deref (%4, %10) (wrmask=xyzw, access=none)
+    32    %11 = deref_var &u_shad (uniform sampler2D)
+    32    %12 = deref_var &v_shad (shader_in vec3)
+    32x3  %13 = @load_deref (%12) (access=none)
+    32    %14 = mov %13.z
+    32x2  %15 = mov %13.xy
+    32    %16 = (float32)tex %11 (texture_deref), %11 (sampler_deref), %15 (coord), %14 (comparator), 2D
+    32x4  %17 = @load_deref (%4) (access=none)
+    32x4  %18 = fadd %17, %16.xxxx
+                @store_deref (%4, %18) (wrmask=xyzw, access=none)
+    32x4  %19 = @load_deref (%4) (access=none)
+    32    %20 = deref_var &o_color (shader_out vec4)
+                @store_deref (%20, %19) (wrmask=xyzw, access=none)
+                // succs: b1
+    block b1:
+}
+

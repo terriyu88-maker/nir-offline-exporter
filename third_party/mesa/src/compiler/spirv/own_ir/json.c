@@ -532,10 +532,12 @@ jw_var(struct jw *j, const struct own_ir_var *var)
    jw_key_u(j, "location_frac", var->location_frac);
    jw_key_u(j, "component_mask", var->component_mask);
    jw_key_u(j, "driver_location", var->driver_location);
-   jw_key_u(j, "binding", var->binding);
-   jw_key(j, "access");
-   jw_access_arr(j, var->access);
-   jw_end_obj(j);
+    jw_key_u(j, "binding", var->binding);
+    jw_key(j, "access");
+    jw_access_arr(j, var->access);
+    if (var->image_format_name && var->image_format_name[0])
+       jw_key_str(j, "image_format", var->image_format_name);
+    jw_end_obj(j);
 }
 
 static void
@@ -959,7 +961,9 @@ own_ir_print_json(struct nir_shader *nir, FILE *fp, const char *api)
    jw_end_arr(&j);
    jw_key_u(&j, "max_subgroup_size", m->max_subgroup_size);
    jw_key_u(&j, "min_subgroup_size", m->min_subgroup_size);
-   jw_key_bool(&j, "origin_upper_left", m->origin_upper_left);
+    jw_key_bool(&j, "origin_upper_left", m->origin_upper_left);
+    if (m->depth_layout)
+       jw_key_u(&j, "depth_layout", m->depth_layout);
    jw_key(&j, "workgroup_size");
    jw_begin_arr(&j);
    for (unsigned i = 0; i < 3; i++) {
@@ -1477,8 +1481,13 @@ jr_var(void *mem_ctx, const JSON_Object *o, struct own_ir_var *var)
    var->location_frac = jr_u(o, "location_frac");
    var->component_mask = jr_u(o, "component_mask");
    var->driver_location = jr_u(o, "driver_location");
-   var->binding = jr_u(o, "binding");
-   var->access = parse_access_arr(json_object_get_array(o, "access"));
+    var->binding = jr_u(o, "binding");
+    var->access = parse_access_arr(json_object_get_array(o, "access"));
+    if (json_object_has_value(o, "image_format"))
+       var->image_format_name =
+          jr_strdup(mem_ctx, json_object_get_string(o, "image_format"));
+    else
+       var->image_format_name = NULL;
 }
 
 static void
@@ -1862,7 +1871,9 @@ own_ir_from_json(void *mem_ctx, const char *path, char **err)
    }
    m->max_subgroup_size = (uint8_t)json_object_get_number(o, "max_subgroup_size");
    m->min_subgroup_size = (uint8_t)json_object_get_number(o, "min_subgroup_size");
-   m->origin_upper_left = jr_b(o, "origin_upper_left");
+    m->origin_upper_left = jr_b(o, "origin_upper_left");
+    m->depth_layout = json_object_has_value(o, "depth_layout")
+                         ? jr_u(o, "depth_layout") : 0;
    {
       JSON_Array *wg = json_object_get_array(o, "workgroup_size");
       if (wg) {

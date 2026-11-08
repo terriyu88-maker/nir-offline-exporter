@@ -21,6 +21,7 @@
     "max_subgroup_size": { "type": "integer", "minimum": 0 },
     "min_subgroup_size": { "type": "integer", "minimum": 0 },
     "origin_upper_left": { "type": "boolean" },
+    "depth_layout": { "type": "integer", "minimum": 0 },
     "workgroup_size": {
       "type": "array",
       "minItems": 3,
@@ -92,7 +93,8 @@
         "access": {
           "type": "array",
           "items": { "type": "string" }
-        }
+        },
+        "image_format": { "type": "string" }
       }
     },
     "block": {

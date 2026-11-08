@@ -299,6 +299,8 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 5. 带 SSBO/原子的 CS
 6. 带 `OpPhi` 的 FS（`--optimize`，保留 NIR `phi`）
 7. 带 `discard` / `demote` 的 FS（`@terminate` + `@demote`）
+8. 带 push constant 的 FS（`nir_var_mem_push_const`）
+9. 纹理变体 FS：cube / 2D array / shadow，以及 `txl` / `txd` / `txf` / `tg4`
 
 文本允许的唯一差异：无。SSA 编号必须与 `nir_print_shader` 一致，因此遍历顺序固定。JSON 必须稳定编号。
 
@@ -306,7 +308,7 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
 
 ### 常见缺口（后续黄金件）
 
-黄金件 1–7 覆盖了 FS / VS / CS 主路径：ALU、2D `tex`、UBO、if/loop、SSBO atomic、`--optimize` 下的 `phi`、`discard`/`demote`。下面这些在真实 Vulkan/GLSL 里很常见，当前没有黄金件，walker/打印机只按通用路径走，未对照过 dump。
+黄金件 1–9 覆盖了 FS / VS / CS 主路径：ALU、2D `tex`、UBO、if/loop、SSBO atomic、`--optimize` 下的 `phi`、`discard`/`demote`、push constant、cube/array/shadow 与 `txl`/`txd`/`txf`/`tg4`。下面这些在真实 Vulkan/GLSL 里很常见，当前没有黄金件，walker/打印机只按通用路径走，未对照过 dump。
 
 每个缺口单独一份 shader；验收与现有黄金件相同：`--emit ours` 与 Mesa dump `diff` 空，JSON 读回再打印仍空。改 walker / 打印机 / schema 后，新旧黄金件一起回归。
 
@@ -315,15 +317,29 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
   - [x] 7.2 L1 默认 `discard_is_demote=false`：GLSL `discard` → `@terminate`，`demote` → `@demote`；头里无 `uses_discard`（未跑 `nir_shader_gather_info`）
   - [x] 7.3 两条都在 if 内，else 为空块；后续仍 `@store_deref` 颜色
   - [x] 7.4 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–6 回归
-- [ ] 8. push constant（VS 或 FS）：`nir_var_mem_push_const`、`deref` + `@load_deref`
-- [ ] 9. 纹理变体（在黄金件 2 的 2D `tex` 之外）
-  - [ ] 9.1 cube / 2D array / 3D / shadow：`samplerCube`、`sampler2DArray`、`sampler2DShadow`
-  - [ ] 9.2 `textureLod` / `textureGrad` / `textureOffset` / `texelFetch` / `textureGather`：`txl` / `txd` / `txf` / `tg4`
-- [ ] 10. image load/store（CS 或 FS）：`image2D` 的 `@image_deref_load` / `@image_deref_store`（与 SSBO atomic 分开）
-- [ ] 11. shared + barrier（CS）：`shared` 数组、`@barrier`、`memory_scope` / `memory_semantics`
-- [ ] 12. 常用 system value
-  - [ ] 12.1 FS：`gl_FragCoord`、`gl_FrontFacing`、`gl_FragDepth`
-  - [ ] 12.2 VS：`gl_VertexIndex`、`gl_InstanceIndex`
+- [x] 8. push constant（VS 或 FS）
+  - [x] 8.1 `shaders/push.frag`：`layout(push_constant) uniform Push { vec4 tint; }`，颜色乘 tint
+  - [x] 8.2 `decl_var push_const`：无 location 括号；`deref_var &p (push_const Push)` + `deref_struct &%2->tint` + `@load_deref`
+  - [x] 8.3 shader 头打 `uniforms: 16`（`nir->num_uniforms`，push constant 字节数）
+  - [x] 8.4 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–7 回归
+- [x] 9. 纹理变体（在黄金件 2 的 2D `tex` 之外）
+  - [x] 9.1 `shaders/texvar.frag`：`samplerCube` → `, Cube`；`sampler2DArray` → `, 2D`（array 在类型名）；`sampler2DShadow` 降成 `sampler2D` + `(comparator)`
+  - [x] 9.2 `shaders/texop.frag`：`textureLod` → `txl` + `(lod)`；`textureGrad` → `txd` + `(ddx)`/`(ddy)`；`textureOffset` 仍是 `tex` + `(offset)`；`texelFetch` → `txf` + `(lod)`；`textureGather` → `tg4` + `(gather_component)`
+  - [x] 9.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–8 回归
+- [x] 10. image load/store（CS）：`image2D` 的 `@image_deref_load` / `@image_deref_store`（与 SSBO atomic 分开）
+  - [x] 10.1 `shaders/image.comp`：`rgba32f` `imageLoad` / `imageStore`
+  - [x] 10.2 `decl_var image` 打 `r32g32b32a32_float`（`util_format_short_name`）；JSON `image_format` 可选字段
+  - [x] 10.3 intrinsic：`image_dim=2D`、`image_array=false`、`format=r32g32b32a32_float`、`dest_type`/`src_type=float32`；coord 用 `undefined` 填 `vec4`
+  - [x] 10.4 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–9 回归
+- [x] 11. shared + barrier（CS）：`shared` 数组、`@barrier`、`memory_scope` / `memory_semantics`
+  - [x] 11.1 `shaders/shared.comp`：`shared uint tile[64]`，写后 `barrier()` 再读回 SSBO
+  - [x] 11.2 `decl_var shared` 无 location 括号；`deref_var &tile (shared uint[64])`
+  - [x] 11.3 `@barrier (execution_scope=WORKGROUP, memory_scope=WORKGROUP, mem_semantics=ACQ|REL, mem_modes=shared)`
+  - [x] 11.4 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–10 回归
+- [x] 12. 常用 system value
+  - [x] 12.1 FS：`shaders/sysval.frag`：`gl_FragCoord` / `gl_FrontFacing` / `gl_FragDepth`；头打 `origin_upper_left: true`、`depth_layout: 1`（写 depth 时 `FRAG_DEPTH_LAYOUT_ANY`）
+  - [x] 12.2 VS：`shaders/sysval.vert`：`gl_VertexIndex` / `gl_InstanceIndex`（`SYSTEM_VALUE_VERTEX_ID` / `SYSTEM_VALUE_INSTANCE_INDEX`）
+  - [x] 12.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–11 回归
 - [ ] 13. 插值修饰：`flat` / `noperspective`（`INTERP_MODE_*` 不是 `NONE`）
 - [ ] 14. 几何阶段（整 stage 尚未打到）
   - [ ] 14.1 GS：`EmitVertex` / `EndPrimitive`，`gl_Position` 写出

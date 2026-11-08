@@ -18,6 +18,13 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `shaders/ssbo.comp` | Golden 5: SSBO atomic compute |
 | `shaders/phi.frag.spvasm` | Golden 6: fragment with `OpPhi` (needs `--optimize`) |
 | `shaders/discard.frag` | Golden 7: `discard` + `demote` fragment |
+| `shaders/push.frag` | Golden 8: push constant fragment |
+| `shaders/texvar.frag` | Golden 9.1: cube / 2D array / shadow |
+| `shaders/texop.frag` | Golden 9.2: `txl` / `txd` / `txf` / `tg4` |
+| `shaders/image.comp` | Golden 10: `image2D` load/store |
+| `shaders/shared.comp` | Golden 11: shared + barrier |
+| `shaders/sysval.frag` | Golden 12.1: FS FragCoord / FrontFacing / FragDepth |
+| `shaders/sysval.vert` | Golden 12.2: VS VertexIndex / InstanceIndex |
 | `out/min.frag.nir.txt` | Sample `nir_print_shader()` dump |
 | `out/tex.frag.nir.txt` | Golden 2 Mesa dump |
 | `out/ubo.vert.nir.txt` | Golden 3 Mesa dump |
@@ -25,6 +32,13 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `out/ssbo.comp.nir.txt` | Golden 5 Mesa dump |
 | `out/phi.frag.nir.txt` | Golden 6 Mesa dump (`--optimize`) |
 | `out/discard.frag.nir.txt` | Golden 7 Mesa dump |
+| `out/push.frag.nir.txt` | Golden 8 Mesa dump |
+| `out/texvar.frag.nir.txt` | Golden 9.1 Mesa dump |
+| `out/texop.frag.nir.txt` | Golden 9.2 Mesa dump |
+| `out/image.comp.nir.txt` | Golden 10 Mesa dump |
+| `out/shared.comp.nir.txt` | Golden 11 Mesa dump |
+| `out/sysval.frag.nir.txt` | Golden 12.1 Mesa dump |
+| `out/sysval.vert.nir.txt` | Golden 12.2 Mesa dump |
 
 ## Cross-build (Linux → Windows PE)
 
@@ -105,4 +119,4 @@ Writes `dist/spirv2nir/spirv2nir.exe`, `libwinpthread-1.dll`, and `README.txt`. 
 
 ## Status
 
-Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–7. Golden 6 (`shaders/phi.frag.spv`) needs `--optimize` so Mesa keeps a NIR `phi`. Golden 7 maps GLSL `discard` to `@terminate` and `demote` to `@demote`. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.
+Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–12. Golden 6 (`shaders/phi.frag.spv`) needs `--optimize` so Mesa keeps a NIR `phi`. Golden 7 maps GLSL `discard` to `@terminate` and `demote` to `@demote`. Golden 8 is `layout(push_constant)` (`decl_var push_const`). Golden 9 covers cube/array/shadow and `txl`/`txd`/`txf`/`tg4` (`textureOffset` stays `tex` + offset). Golden 10 is `image2D` `@image_deref_load` / `@image_deref_store` with `r32g32b32a32_float`. Golden 11 is `shared` + `@barrier` (`execution_scope=WORKGROUP`, `mem_semantics=ACQ|REL`, `mem_modes=shared`). Golden 12 is FS `gl_FragCoord` / `gl_FrontFacing` / `gl_FragDepth` (`depth_layout: 1`) and VS `gl_VertexIndex` / `gl_InstanceIndex`. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.

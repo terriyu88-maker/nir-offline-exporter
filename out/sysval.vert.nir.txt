@@ -1,0 +1,32 @@
+shader: MESA_SHADER_VERTEX
+source_blake3: {0xb57d061a, 0x881ff7be, 0x3366ceea, 0xe71c2c32, 0xb500c5d2, 0xf4947584, 0x44a77616, 0x69c54c2b}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+decl_var system INTERP_MODE_NONE none int gl_VertexIndex (SYSTEM_VALUE_VERTEX_ID)
+decl_var system INTERP_MODE_NONE none int gl_InstanceIndex (SYSTEM_VALUE_INSTANCE_INDEX)
+decl_var shader_out INTERP_MODE_NONE none gl_PerVertex #0 (VARYING_SLOT_POS, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 v_out (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:   // preds:
+    32     %0 = deref_var &gl_VertexIndex (system int)
+    32     %1 = @load_deref (%0) (access=none)
+    32     %2 = i2f32 %1
+    32     %3 = deref_var &gl_InstanceIndex (system int)
+    32     %4 = @load_deref (%3) (access=none)
+    32     %5 = i2f32 %4
+    32     %6 = load_const (0x00000000 = 0.000000)
+    32     %7 = load_const (0x3f800000 = 1.000000)
+    32x4   %8 = vec4 %2, %5, %6 (0x0), %7 (0x3f800000)
+    32     %9 = deref_var &v_out (shader_out vec4)
+                @store_deref (%9, %8) (wrmask=xyzw, access=none)
+    32x4  %10 = @load_deref (%9) (access=none)
+    32    %11 = deref_var &#0 (shader_out gl_PerVertex)
+    32    %12 = deref_struct &%11->gl_Position (shader_out vec4)  // &#0.gl_Position
+                @store_deref (%12, %10) (wrmask=xyzw, access=none)
+                // succs: b1
+    block b1:
+}
+
