@@ -1,0 +1,59 @@
+shader: MESA_SHADER_TESS_EVAL
+source_blake3: {0xa9fbda90, 0x48a49730, 0x73fbb170, 0x4759ae01, 0xde31415c, 0x24fe3c87, 0x80284a02, 0xffde3154}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+primitive_mode: 1
+tcs_vertices_out: 0
+spacing: 1
+ccw: true
+decl_var system INTERP_MODE_NONE none vec3 gl_TessCoord (SYSTEM_VALUE_TESS_COORD)
+decl_var shader_in INTERP_MODE_NONE none gl_PerVertex[32] gl_in (VARYING_SLOT_POS, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec4[32] v_in (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none gl_PerVertex #0 (VARYING_SLOT_POS, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 v_out (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:   // preds:
+    32     %0 = deref_var &gl_TessCoord (system vec3)
+    32x3   %1 = @load_deref (%0) (access=none)
+    32     %2 = deref_var &gl_in (shader_in gl_PerVertex[32])
+    32     %3 = load_const (0x00000000 = 0.000000)
+    32     %4 = deref_array &(*%2)[0] (shader_in gl_PerVertex)  // &gl_in[0]
+    32     %5 = deref_struct &%4->gl_Position (shader_in vec4)  // &gl_in[0].gl_Position
+    32x4   %6 = @load_deref (%5) (access=none)
+    32x4   %7 = fmul %6, %1.xxxx
+    32     %8 = load_const (0x00000001 = 0.000000)
+    32     %9 = deref_array &(*%2)[1] (shader_in gl_PerVertex)  // &gl_in[1]
+    32    %10 = deref_struct &%9->gl_Position (shader_in vec4)  // &gl_in[1].gl_Position
+    32x4  %11 = @load_deref (%10) (access=none)
+    32x4  %12 = fmul %11, %1.yyyy
+    32x4  %13 = fadd %7, %12
+    32    %14 = load_const (0x00000002 = 0.000000)
+    32    %15 = deref_array &(*%2)[2] (shader_in gl_PerVertex)  // &gl_in[2]
+    32    %16 = deref_struct &%15->gl_Position (shader_in vec4)  // &gl_in[2].gl_Position
+    32x4  %17 = @load_deref (%16) (access=none)
+    32x4  %18 = fmul %17, %1.zzzz
+    32x4  %19 = fadd %13, %18
+    32    %20 = deref_var &#0 (shader_out gl_PerVertex)
+    32    %21 = deref_struct &%20->gl_Position (shader_out vec4)  // &#0.gl_Position
+                @store_deref (%21, %19) (wrmask=xyzw, access=none)
+    32    %22 = deref_var &v_in (shader_in vec4[32])
+    32    %23 = deref_array &(*%22)[0] (shader_in vec4)  // &v_in[0]
+    32x4  %24 = @load_deref (%23) (access=none)
+    32x4  %25 = fmul %24, %1.xxxx
+    32    %26 = deref_array &(*%22)[1] (shader_in vec4)  // &v_in[1]
+    32x4  %27 = @load_deref (%26) (access=none)
+    32x4  %28 = fmul %27, %1.yyyy
+    32x4  %29 = fadd %25, %28
+    32    %30 = deref_array &(*%22)[2] (shader_in vec4)  // &v_in[2]
+    32x4  %31 = @load_deref (%30) (access=none)
+    32x4  %32 = fmul %31, %1.zzzz
+    32x4  %33 = fadd %29, %32
+    32    %34 = deref_var &v_out (shader_out vec4)
+                @store_deref (%34, %33) (wrmask=xyzw, access=none)
+                // succs: b1
+    block b1:
+}
+

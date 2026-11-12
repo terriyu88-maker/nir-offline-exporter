@@ -791,10 +791,36 @@ print_tex(FILE *fp, const struct own_ir_tex *tex, unsigned max_dest)
    fprintf(fp, ", %s", sampler_dim_str(tex->sampler_dim));
 }
 
+static const char *
+primitive_name(unsigned primitive)
+{
+#define PRIM(X)        \
+   case MESA_PRIM_##X: \
+      return #X
+   switch (primitive) {
+      PRIM(POINTS);
+      PRIM(LINES);
+      PRIM(LINE_LOOP);
+      PRIM(LINE_STRIP);
+      PRIM(TRIANGLES);
+      PRIM(TRIANGLE_STRIP);
+      PRIM(TRIANGLE_FAN);
+      PRIM(QUADS);
+      PRIM(QUAD_STRIP);
+      PRIM(POLYGON);
+      PRIM(LINES_ADJACENCY);
+      PRIM(TRIANGLES_ADJACENCY);
+   default:
+      return "UNKNOWN";
+   }
+#undef PRIM
+}
+
 static void
 print_var(FILE *fp, const struct own_ir_module *m, const struct own_ir_var *var)
 {
-   fprintf(fp, "decl_var %s %s ",
+   fprintf(fp, "decl_var %s%s %s ",
+           var->patch ? "patch " : "",
            mode_str(var->mode, false),
            glsl_interp_mode_name(var->interpolation));
      print_access(fp, var->access, " ");
@@ -819,12 +845,13 @@ print_var(FILE *fp, const struct own_ir_module *m, const struct own_ir_var *var)
              components_local[i + 1] = xyzw[i + var->location_frac];
           components = components_local;
        }
-       if (var->mode & nir_var_system_value)
-          fprintf(fp, " (%s%s)", loc, components);
-       else
-          fprintf(fp, " (%s%s, %u, %u)", loc, components,
-                  var->driver_location, var->binding);
-    }
+        if (var->mode & nir_var_system_value)
+           fprintf(fp, " (%s%s)", loc, components);
+        else
+           fprintf(fp, " (%s%s, %u, %u)%s", loc, components,
+                   var->driver_location, var->binding,
+                   var->compact ? " compact" : "");
+     }
    fputc('\n', fp);
 }
 
@@ -1366,12 +1393,31 @@ own_ir_print_module(const struct own_ir_module *m, FILE *fp)
        fprintf(fp, "num_ssbos: %u\n", m->num_ssbos);
     if (m->num_images)
        fprintf(fp, "num_images: %u\n", m->num_images);
-    fprintf(fp, "max_subgroup_size: %u\n", m->max_subgroup_size);
-    fprintf(fp, "min_subgroup_size: %u\n", m->min_subgroup_size);
-    if (m->origin_upper_left)
-       fputs("origin_upper_left: true\n", fp);
-    if (m->depth_layout)
-       fprintf(fp, "depth_layout: %u\n", m->depth_layout);
+     fprintf(fp, "max_subgroup_size: %u\n", m->max_subgroup_size);
+     fprintf(fp, "min_subgroup_size: %u\n", m->min_subgroup_size);
+     if (m->stage == MESA_SHADER_TESS_CTRL || m->stage == MESA_SHADER_TESS_EVAL) {
+        fprintf(fp, "primitive_mode: %u\n", (unsigned)m->tess_primitive_mode);
+        fprintf(fp, "tcs_vertices_out: %u\n", m->tcs_vertices_out);
+        fprintf(fp, "spacing: %u\n", m->tess_spacing);
+        if (m->tess_ccw)
+           fputs("ccw: true\n", fp);
+        if (m->tess_point_mode)
+           fputs("point_mode: true\n", fp);
+     }
+     if (m->stage == MESA_SHADER_GEOMETRY) {
+        fprintf(fp, "output_primitive: %s\n", primitive_name(m->gs_output_primitive));
+        fprintf(fp, "input_primitive: %s\n", primitive_name(m->gs_input_primitive));
+        fprintf(fp, "vertices_out: %u\n", m->gs_vertices_out);
+        fprintf(fp, "invocations: %u\n", m->gs_invocations);
+        fprintf(fp, "vertices_in: %u\n", m->gs_vertices_in);
+        if (m->gs_uses_end_primitive)
+           fputs("uses_end_primitive: true\n", fp);
+        fprintf(fp, "active_stream_mask: 0x%02x\n", m->gs_active_stream_mask);
+     }
+     if (m->origin_upper_left)
+        fputs("origin_upper_left: true\n", fp);
+     if (m->depth_layout)
+        fprintf(fp, "depth_layout: %u\n", m->depth_layout);
    if (m->num_inputs)
       fprintf(fp, "inputs: %u\n", m->num_inputs);
    if (m->num_outputs)

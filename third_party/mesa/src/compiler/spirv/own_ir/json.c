@@ -176,6 +176,53 @@ jw_key_i(struct jw *j, const char *k, int64_t v)
 }
 
 static const char *
+primitive_name_json(unsigned primitive)
+{
+#define PRIM(X)        \
+   case MESA_PRIM_##X: \
+      return #X
+   switch (primitive) {
+      PRIM(POINTS);
+      PRIM(LINES);
+      PRIM(LINE_LOOP);
+      PRIM(LINE_STRIP);
+      PRIM(TRIANGLES);
+      PRIM(TRIANGLE_STRIP);
+      PRIM(TRIANGLE_FAN);
+      PRIM(QUADS);
+      PRIM(QUAD_STRIP);
+      PRIM(POLYGON);
+      PRIM(LINES_ADJACENCY);
+      PRIM(TRIANGLES_ADJACENCY);
+   default:
+      return "UNKNOWN";
+   }
+#undef PRIM
+}
+
+static enum mesa_prim
+parse_mesa_prim(const char *s)
+{
+   if (!s)
+      return MESA_PRIM_UNKNOWN;
+#define PRIM(X) if (!strcmp(s, #X)) return MESA_PRIM_##X
+   PRIM(POINTS);
+   PRIM(LINES);
+   PRIM(LINE_LOOP);
+   PRIM(LINE_STRIP);
+   PRIM(TRIANGLES);
+   PRIM(TRIANGLE_STRIP);
+   PRIM(TRIANGLE_FAN);
+   PRIM(QUADS);
+   PRIM(QUAD_STRIP);
+   PRIM(POLYGON);
+   PRIM(LINES_ADJACENCY);
+   PRIM(TRIANGLES_ADJACENCY);
+#undef PRIM
+   return MESA_PRIM_UNKNOWN;
+}
+
+static const char *
 var_mode_name(nir_variable_mode mode)
 {
    switch (mode) {
@@ -535,9 +582,13 @@ jw_var(struct jw *j, const struct own_ir_var *var)
     jw_key_u(j, "binding", var->binding);
     jw_key(j, "access");
     jw_access_arr(j, var->access);
-    if (var->image_format_name && var->image_format_name[0])
-       jw_key_str(j, "image_format", var->image_format_name);
-    jw_end_obj(j);
+     if (var->image_format_name && var->image_format_name[0])
+        jw_key_str(j, "image_format", var->image_format_name);
+     if (var->patch)
+        jw_key_bool(j, "patch", true);
+     if (var->compact)
+        jw_key_bool(j, "compact", true);
+     jw_end_obj(j);
 }
 
 static void
@@ -961,9 +1012,28 @@ own_ir_print_json(struct nir_shader *nir, FILE *fp, const char *api)
    jw_end_arr(&j);
    jw_key_u(&j, "max_subgroup_size", m->max_subgroup_size);
    jw_key_u(&j, "min_subgroup_size", m->min_subgroup_size);
-    jw_key_bool(&j, "origin_upper_left", m->origin_upper_left);
-    if (m->depth_layout)
-       jw_key_u(&j, "depth_layout", m->depth_layout);
+     jw_key_bool(&j, "origin_upper_left", m->origin_upper_left);
+     if (m->depth_layout)
+        jw_key_u(&j, "depth_layout", m->depth_layout);
+     if (m->stage == MESA_SHADER_GEOMETRY) {
+        jw_key_str(&j, "output_primitive", primitive_name_json(m->gs_output_primitive));
+        jw_key_str(&j, "input_primitive", primitive_name_json(m->gs_input_primitive));
+        jw_key_u(&j, "vertices_out", m->gs_vertices_out);
+        jw_key_u(&j, "invocations", m->gs_invocations);
+        jw_key_u(&j, "vertices_in", m->gs_vertices_in);
+        if (m->gs_uses_end_primitive)
+           jw_key_bool(&j, "uses_end_primitive", true);
+        jw_key_u(&j, "active_stream_mask", m->gs_active_stream_mask);
+     }
+     if (m->stage == MESA_SHADER_TESS_CTRL || m->stage == MESA_SHADER_TESS_EVAL) {
+        jw_key_u(&j, "primitive_mode", (unsigned)m->tess_primitive_mode);
+        jw_key_u(&j, "tcs_vertices_out", m->tcs_vertices_out);
+        jw_key_u(&j, "spacing", m->tess_spacing);
+        if (m->tess_ccw)
+           jw_key_bool(&j, "ccw", true);
+        if (m->tess_point_mode)
+           jw_key_bool(&j, "point_mode", true);
+     }
    jw_key(&j, "workgroup_size");
    jw_begin_arr(&j);
    for (unsigned i = 0; i < 3; i++) {
@@ -1483,11 +1553,13 @@ jr_var(void *mem_ctx, const JSON_Object *o, struct own_ir_var *var)
    var->driver_location = jr_u(o, "driver_location");
     var->binding = jr_u(o, "binding");
     var->access = parse_access_arr(json_object_get_array(o, "access"));
-    if (json_object_has_value(o, "image_format"))
-       var->image_format_name =
-          jr_strdup(mem_ctx, json_object_get_string(o, "image_format"));
-    else
-       var->image_format_name = NULL;
+     if (json_object_has_value(o, "image_format"))
+        var->image_format_name =
+           jr_strdup(mem_ctx, json_object_get_string(o, "image_format"));
+     else
+        var->image_format_name = NULL;
+     var->patch = jr_b(o, "patch");
+     var->compact = jr_b(o, "compact");
 }
 
 static void
@@ -1871,9 +1943,26 @@ own_ir_from_json(void *mem_ctx, const char *path, char **err)
    }
    m->max_subgroup_size = (uint8_t)json_object_get_number(o, "max_subgroup_size");
    m->min_subgroup_size = (uint8_t)json_object_get_number(o, "min_subgroup_size");
-    m->origin_upper_left = jr_b(o, "origin_upper_left");
-    m->depth_layout = json_object_has_value(o, "depth_layout")
-                         ? jr_u(o, "depth_layout") : 0;
+     m->origin_upper_left = jr_b(o, "origin_upper_left");
+     m->depth_layout = json_object_has_value(o, "depth_layout")
+                          ? jr_u(o, "depth_layout") : 0;
+     if (json_object_has_value(o, "output_primitive"))
+        m->gs_output_primitive =
+           parse_mesa_prim(json_object_get_string(o, "output_primitive"));
+     if (json_object_has_value(o, "input_primitive"))
+        m->gs_input_primitive =
+           parse_mesa_prim(json_object_get_string(o, "input_primitive"));
+     m->gs_vertices_out = (uint16_t)jr_u(o, "vertices_out");
+     m->gs_invocations = (uint8_t)jr_u(o, "invocations");
+     m->gs_vertices_in = (uint8_t)jr_u(o, "vertices_in");
+     m->gs_uses_end_primitive = jr_b(o, "uses_end_primitive");
+     m->gs_active_stream_mask = (uint8_t)jr_u(o, "active_stream_mask");
+     m->tess_primitive_mode =
+        (enum tess_primitive_mode)jr_u(o, "primitive_mode");
+     m->tcs_vertices_out = (uint8_t)jr_u(o, "tcs_vertices_out");
+     m->tess_spacing = jr_u(o, "spacing");
+     m->tess_ccw = jr_b(o, "ccw");
+     m->tess_point_mode = jr_b(o, "point_mode");
    {
       JSON_Array *wg = json_object_get_array(o, "workgroup_size");
       if (wg) {

@@ -1,0 +1,31 @@
+; SPIR-V
+; Fragment: o = vec4(v + undef)
+; Uses OpUndef so L1 still has nir_undef (`= undefined`).
+; Magic: 0x07230203
+OpCapability Shader
+%1 = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %v %o
+OpExecutionMode %main OriginUpperLeft
+OpName %main "main"
+OpName %v "v"
+OpName %o "o"
+OpDecorate %v Location 0
+OpDecorate %o Location 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%float = OpTypeFloat 32
+%v4 = OpTypeVector %float 4
+%ptr_in = OpTypePointer Input %float
+%ptr_out = OpTypePointer Output %v4
+%v = OpVariable %ptr_in Input
+%o = OpVariable %ptr_out Output
+%main = OpFunction %void None %fn
+%entry = OpLabel
+%ld = OpLoad %float %v
+%u = OpUndef %float
+%sum = OpFAdd %float %ld %u
+%vec = OpCompositeConstruct %v4 %sum %sum %sum %sum
+OpStore %o %vec
+OpReturn
+OpFunctionEnd

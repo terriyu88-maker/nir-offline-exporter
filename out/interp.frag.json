@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "mesa_git": "26.2.5",
+  "stage": "MESA_SHADER_FRAGMENT",
+  "api": "vulkan",
+  "name": "",
+  "source_blake3": [
+    131,
+    227,
+    119,
+    189,
+    41,
+    231,
+    76,
+    79,
+    172,
+    177,
+    67,
+    14,
+    189,
+    184,
+    71,
+    200,
+    80,
+    82,
+    98,
+    229,
+    245,
+    179,
+    130,
+    254,
+    41,
+    213,
+    111,
+    112,
+    179,
+    56,
+    207,
+    124
+  ],
+  "max_subgroup_size": 128,
+  "min_subgroup_size": 1,
+  "origin_upper_left": true,
+  "workgroup_size": [
+    0,
+    0,
+    0
+  ],
+  "workgroup_size_variable": false,
+  "num_inputs": 0,
+  "num_outputs": 0,
+  "num_uniforms": 0,
+  "num_textures": 0,
+  "num_ubos": 0,
+  "num_abos": 0,
+  "num_ssbos": 0,
+  "num_images": 0,
+  "scratch_size": 0,
+  "variables": [
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_FLAT",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "v_flat",
+      "location": 32,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_in",
+      "interpolation": "INTERP_MODE_NOPERSPECTIVE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "v_nop",
+      "location": 33,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    },
+    {
+      "mode": "nir_var_shader_out",
+      "interpolation": "INTERP_MODE_NONE",
+      "type": "vec4",
+      "type_components": 4,
+      "name": "o_color",
+      "location": 4,
+      "location_frac": 0,
+      "component_mask": 15,
+      "driver_location": 0,
+      "binding": 0,
+      "access": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "is_entrypoint": true,
+      "ssa_alloc": 6,
+      "locals": [],
+      "body": [
+        {
+          "kind": "block",
+          "block": {
+            "index": 0,
+            "label": "b0",
+            "preds": [],
+            "succs": [
+              "b1"
+            ],
+            "instrs": [
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 0,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec4",
+                  "var_name": "v_flat"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 1,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 0,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 2,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_in"
+                  ],
+                  "type": "vec4",
+                  "var_name": "v_nop"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": true,
+                  "dest": {
+                    "index": 3,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "dest_alu_type": "nir_type_float32",
+                  "op": "load_deref",
+                  "num_components": 4,
+                  "write_mask": 0,
+                  "access": [],
+                  "const_index": [
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 2,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "alu",
+                "alu": {
+                  "dest": {
+                    "index": 4,
+                    "bit_size": 32,
+                    "num_components": 4
+                  },
+                  "op": "fadd",
+                  "no_signed_wrap": false,
+                  "no_unsigned_wrap": false,
+                  "fp_math_ctrl": 0,
+                  "srcs": [
+                    {
+                      "ssa": 1,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    },
+                    {
+                      "ssa": 3,
+                      "is_const": false,
+                      "src_components": 4,
+                      "swizzle": [
+                        0,
+                        1,
+                        2,
+                        3
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "kind": "deref",
+                "deref": {
+                  "dest": {
+                    "index": 5,
+                    "bit_size": 32,
+                    "num_components": 1
+                  },
+                  "deref_type": "nir_deref_type_var",
+                  "modes": [
+                    "nir_var_shader_out"
+                  ],
+                  "type": "vec4",
+                  "var_name": "o_color"
+                }
+              },
+              {
+                "kind": "intrinsic",
+                "intrinsic": {
+                  "has_dest": false,
+                  "op": "store_deref",
+                  "num_components": 4,
+                  "write_mask": 15,
+                  "access": [],
+                  "const_index": [
+                    15,
+                    0
+                  ],
+                  "srcs": [
+                    {
+                      "ssa": 5,
+                      "is_const": false,
+                      "alu_type": "nir_type_invalid"
+                    },
+                    {
+                      "ssa": 4,
+                      "is_const": false,
+                      "alu_type": "nir_type_float32"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "end_block": {
+        "index": 1,
+        "label": "b1",
+        "is_end_block": true,
+        "preds": [
+          "b0"
+        ],
+        "succs": [],
+        "instrs": []
+      }
+    }
+  ]
+}

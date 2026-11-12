@@ -22,6 +22,18 @@
     "min_subgroup_size": { "type": "integer", "minimum": 0 },
     "origin_upper_left": { "type": "boolean" },
     "depth_layout": { "type": "integer", "minimum": 0 },
+    "output_primitive": { "type": "string" },
+    "input_primitive": { "type": "string" },
+    "vertices_out": { "type": "integer", "minimum": 0 },
+    "invocations": { "type": "integer", "minimum": 0 },
+    "vertices_in": { "type": "integer", "minimum": 0 },
+    "uses_end_primitive": { "type": "boolean" },
+    "active_stream_mask": { "type": "integer", "minimum": 0 },
+    "primitive_mode": { "type": "integer", "minimum": 0 },
+    "tcs_vertices_out": { "type": "integer", "minimum": 0 },
+    "spacing": { "type": "integer", "minimum": 0 },
+    "ccw": { "type": "boolean" },
+    "point_mode": { "type": "boolean" },
     "workgroup_size": {
       "type": "array",
       "minItems": 3,
@@ -94,7 +106,9 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "image_format": { "type": "string" }
+        "image_format": { "type": "string" },
+        "patch": { "type": "boolean" },
+        "compact": { "type": "boolean" }
       }
     },
     "block": {

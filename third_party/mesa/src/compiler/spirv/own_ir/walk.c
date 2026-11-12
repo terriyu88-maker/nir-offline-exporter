@@ -129,12 +129,14 @@ fill_var(struct own_ir_var *ov, struct own_ir_module *m, nir_variable *var,
    ov->driver_location = var->data.driver_location;
     ov->binding = var->data.binding;
     ov->access = var->data.access;
-    ov->image_format_name = NULL;
-    if (var->type &&
-        glsl_get_base_type(glsl_without_array(var->type)) == GLSL_TYPE_IMAGE)
-       ov->image_format_name = util_format_short_name(var->data.image.format);
+     ov->image_format_name = NULL;
+     if (var->type &&
+         glsl_get_base_type(glsl_without_array(var->type)) == GLSL_TYPE_IMAGE)
+        ov->image_format_name = util_format_short_name(var->data.image.format);
+     ov->patch = var->data.patch;
+     ov->compact = var->data.compact;
 
-    unsigned num_components = ov->type_components;
+     unsigned num_components = ov->type_components;
    if (num_components > 0 && num_components < 16)
       ov->component_mask = ((1u << num_components) - 1) << var->data.location_frac;
    else
@@ -569,11 +571,28 @@ own_ir_walk(struct nir_shader *nir)
    m->name = nir->info.name;
    m->max_subgroup_size = nir->info.max_subgroup_size;
    m->min_subgroup_size = nir->info.min_subgroup_size;
-    m->origin_upper_left =
-       nir->info.stage == MESA_SHADER_FRAGMENT && nir->info.fs.origin_upper_left;
-    m->depth_layout =
-       nir->info.stage == MESA_SHADER_FRAGMENT ? nir->info.fs.depth_layout : 0;
-   m->workgroup_size[0] = nir->info.workgroup_size[0];
+     m->origin_upper_left =
+        nir->info.stage == MESA_SHADER_FRAGMENT && nir->info.fs.origin_upper_left;
+     m->depth_layout =
+        nir->info.stage == MESA_SHADER_FRAGMENT ? nir->info.fs.depth_layout : 0;
+     if (nir->info.stage == MESA_SHADER_GEOMETRY) {
+        m->gs_output_primitive = nir->info.gs.output_primitive;
+        m->gs_input_primitive = nir->info.gs.input_primitive;
+        m->gs_vertices_out = nir->info.gs.vertices_out;
+        m->gs_invocations = nir->info.gs.invocations;
+        m->gs_vertices_in = nir->info.gs.vertices_in;
+        m->gs_uses_end_primitive = nir->info.gs.uses_end_primitive;
+        m->gs_active_stream_mask = nir->info.gs.active_stream_mask;
+     }
+     if (nir->info.stage == MESA_SHADER_TESS_CTRL ||
+         nir->info.stage == MESA_SHADER_TESS_EVAL) {
+        m->tess_primitive_mode = nir->info.tess._primitive_mode;
+        m->tcs_vertices_out = nir->info.tess.tcs_vertices_out;
+        m->tess_spacing = nir->info.tess.spacing;
+        m->tess_ccw = nir->info.tess.ccw;
+        m->tess_point_mode = nir->info.tess.point_mode;
+     }
+    m->workgroup_size[0] = nir->info.workgroup_size[0];
    m->workgroup_size[1] = nir->info.workgroup_size[1];
    m->workgroup_size[2] = nir->info.workgroup_size[2];
    m->workgroup_size_variable = nir->info.workgroup_size_variable;

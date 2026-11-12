@@ -16,7 +16,7 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `shaders/ubo.vert` | Golden 3: UBO vertex |
 | `shaders/ifloop.frag` | Golden 4: if / loop fragment |
 | `shaders/ssbo.comp` | Golden 5: SSBO atomic compute |
-| `shaders/phi.frag.spvasm` | Golden 6: fragment with `OpPhi` (needs `--optimize`) |
+| `shaders/phi.frag.spvasm` | Golden 6: fragment with `OpPhi` (needs `--optimize`); golden 15 is the same SPV at default L1 |
 | `shaders/discard.frag` | Golden 7: `discard` + `demote` fragment |
 | `shaders/push.frag` | Golden 8: push constant fragment |
 | `shaders/texvar.frag` | Golden 9.1: cube / 2D array / shadow |
@@ -25,12 +25,19 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `shaders/shared.comp` | Golden 11: shared + barrier |
 | `shaders/sysval.frag` | Golden 12.1: FS FragCoord / FrontFacing / FragDepth |
 | `shaders/sysval.vert` | Golden 12.2: VS VertexIndex / InstanceIndex |
+| `shaders/interp.frag` | Golden 13: `flat` / `noperspective` |
+| `shaders/geom.geom` | Golden 14.1: geometry `EmitVertex` / `EndPrimitive` |
+| `shaders/tess.tesc` | Golden 14.2: tess control `gl_TessLevel*` patch |
+| `shaders/tess.tese` | Golden 14.2: tess eval `gl_TessCoord` |
+| `shaders/undef.frag.spvasm` | Golden 16: `OpUndef` → `= undefined` |
+| `shaders/swcont.frag` | Golden 17: `switch` + loop `continue` |
 | `out/min.frag.nir.txt` | Sample `nir_print_shader()` dump |
 | `out/tex.frag.nir.txt` | Golden 2 Mesa dump |
 | `out/ubo.vert.nir.txt` | Golden 3 Mesa dump |
 | `out/ifloop.frag.nir.txt` | Golden 4 Mesa dump |
 | `out/ssbo.comp.nir.txt` | Golden 5 Mesa dump |
 | `out/phi.frag.nir.txt` | Golden 6 Mesa dump (`--optimize`) |
+| `out/phi.frag.l1.nir.txt` | Golden 15 Mesa dump (default L1: `function_temp` store/load) |
 | `out/discard.frag.nir.txt` | Golden 7 Mesa dump |
 | `out/push.frag.nir.txt` | Golden 8 Mesa dump |
 | `out/texvar.frag.nir.txt` | Golden 9.1 Mesa dump |
@@ -39,6 +46,12 @@ Pinned Mesa: **26.2.5** (vendored under `third_party/mesa`).
 | `out/shared.comp.nir.txt` | Golden 11 Mesa dump |
 | `out/sysval.frag.nir.txt` | Golden 12.1 Mesa dump |
 | `out/sysval.vert.nir.txt` | Golden 12.2 Mesa dump |
+| `out/interp.frag.nir.txt` | Golden 13 Mesa dump |
+| `out/geom.geom.nir.txt` | Golden 14.1 Mesa dump |
+| `out/tess.tesc.nir.txt` | Golden 14.2 TCS Mesa dump |
+| `out/tess.tese.nir.txt` | Golden 14.2 TES Mesa dump |
+| `out/undef.frag.nir.txt` | Golden 16 Mesa dump (`= undefined`) |
+| `out/swcont.frag.nir.txt` | Golden 17 Mesa dump (`switch` → ifs, `loop_continue`) |
 
 ## Cross-build (Linux → Windows PE)
 
@@ -119,4 +132,4 @@ Writes `dist/spirv2nir/spirv2nir.exe`, `libwinpthread-1.dll`, and `README.txt`. 
 
 ## Status
 
-Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–12. Golden 6 (`shaders/phi.frag.spv`) needs `--optimize` so Mesa keeps a NIR `phi`. Golden 7 maps GLSL `discard` to `@terminate` and `demote` to `@demote`. Golden 8 is `layout(push_constant)` (`decl_var push_const`). Golden 9 covers cube/array/shadow and `txl`/`txd`/`txf`/`tg4` (`textureOffset` stays `tex` + offset). Golden 10 is `image2D` `@image_deref_load` / `@image_deref_store` with `r32g32b32a32_float`. Golden 11 is `shared` + `@barrier` (`execution_scope=WORKGROUP`, `mem_semantics=ACQ|REL`, `mem_modes=shared`). Golden 12 is FS `gl_FragCoord` / `gl_FrontFacing` / `gl_FragDepth` (`depth_layout: 1`) and VS `gl_VertexIndex` / `gl_InstanceIndex`. JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.
+Stages 0–4 done. In-memory own IR reprints match `nir_print_shader()` (`diff` empty) on goldens 1–17. Golden 6 (`shaders/phi.frag.spv` + `--optimize`) keeps a NIR `phi`; golden 15 is the same SPV at default L1 (`function_temp` store/load, no `phi`). Golden 7 maps GLSL `discard` to `@terminate` and `demote` to `@demote`. Golden 8 is `layout(push_constant)` (`decl_var push_const`). Golden 9 covers cube/array/shadow and `txl`/`txd`/`txf`/`tg4` (`textureOffset` stays `tex` + offset). Golden 10 is `image2D` `@image_deref_load` / `@image_deref_store` with `r32g32b32a32_float`. Golden 11 is `shared` + `@barrier` (`execution_scope=WORKGROUP`, `mem_semantics=ACQ|REL`, `mem_modes=shared`). Golden 12 is FS `gl_FragCoord` / `gl_FrontFacing` / `gl_FragDepth` (`depth_layout: 1`) and VS `gl_VertexIndex` / `gl_InstanceIndex`. Golden 13 is `flat` / `noperspective` (`INTERP_MODE_FLAT` / `INTERP_MODE_NOPERSPECTIVE`). Golden 14 is GS (`TRIANGLE_STRIP` / `TRIANGLES`) and TCS/TES (`decl_var patch ... compact`, `gl_TessCoord`). Golden 16 is `OpUndef` (`32 %0 = undefined` then `fadd`). Golden 17 is `switch` + loop `continue` (L1: if-chain + `function_temp loop_continue`; no `continue` jump). JSON contrast dump round-trips. GLSL files compile through glslang on Windows then follow the same path. Next optional: a clean Win10/11 machine without Mesa sources.

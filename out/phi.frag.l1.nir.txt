@@ -1,0 +1,40 @@
+shader: MESA_SHADER_FRAGMENT
+source_blake3: {0x924692a5, 0x1af9534a, 0x61f48594, 0xb199b99a, 0x0bd5521e, 0x58c9d3df, 0x4e7c59c2, 0x6f06e6c7}
+max_subgroup_size: 128
+min_subgroup_size: 1
+origin_upper_left: true
+decl_var shader_in INTERP_MODE_NONE none float v (VARYING_SLOT_VAR0.x, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none vec4 o (FRAG_RESULT_DATA0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    decl_var  INTERP_MODE_NONE none float phi
+    block b0:   // preds:
+    32     %0 = deref_var &v (shader_in float)
+    32     %1 = @load_deref (%0) (access=none)
+    32     %2 = load_const (0x3f000000 = 0.500000)
+    1      %3 = flt %2 (0.500000), %1 // preserve:inf,nan
+                // succs: b1 b2
+    if %3 {
+        block b1:   // preds: b0
+        32     %4 = load_const (0x3f800000 = 1.000000)
+        32     %5 = deref_var &phi (function_temp float)
+                    @store_deref (%5, %4 (1.000000)) (wrmask=x, access=none)
+                    // succs: b3
+    } else {
+        block b2:   // preds: b0
+        32     %6 = load_const (0x00000000 = 0.000000)
+        32     %7 = deref_var &phi (function_temp float)
+                    @store_deref (%7, %6 (0.000000)) (wrmask=x, access=none)
+                    // succs: b3
+    }
+    block b3:   // preds: b1 b2
+    32     %8 = deref_var &phi (function_temp float)
+    32     %9 = @load_deref (%8) (access=none)
+    32x4  %10 = vec4 %9, %9, %9, %9
+    32    %11 = deref_var &o (shader_out vec4)
+                @store_deref (%11, %10) (wrmask=xyzw, access=none)
+                // succs: b4
+    block b4:
+}
+

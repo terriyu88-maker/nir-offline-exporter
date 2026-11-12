@@ -1,0 +1,61 @@
+shader: MESA_SHADER_TESS_CTRL
+source_blake3: {0xc24243af, 0x84dcae32, 0xb53e0f16, 0x64474854, 0x5abf02f7, 0x019ff4d6, 0xe6b7a81f, 0xc54b7cd7}
+name: 
+max_subgroup_size: 128
+min_subgroup_size: 1
+primitive_mode: 0
+tcs_vertices_out: 3
+spacing: 0
+decl_var system INTERP_MODE_NONE none int gl_InvocationID (SYSTEM_VALUE_INVOCATION_ID)
+decl_var shader_in INTERP_MODE_NONE none gl_PerVertex[32] gl_in (VARYING_SLOT_POS, 0, 0)
+decl_var shader_in INTERP_MODE_NONE none vec4[32] v_in (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_var shader_out INTERP_MODE_NONE none gl_PerVertex[3] gl_out (VARYING_SLOT_POS, 0, 0)
+decl_var patch shader_out INTERP_MODE_NONE none float[4] gl_TessLevelOuter (VARYING_SLOT_TESS_LEVEL_OUTER.x, 0, 0) compact
+decl_var patch shader_out INTERP_MODE_NONE none float[2] gl_TessLevelInner (VARYING_SLOT_TESS_LEVEL_INNER.x, 0, 0) compact
+decl_var shader_out INTERP_MODE_NONE none vec4[3] v_out (VARYING_SLOT_VAR0.xyzw, 0, 0)
+decl_function main () (entrypoint)
+
+impl main {
+    block b0:   // preds:
+    32     %0 = deref_var &gl_InvocationID (system int)
+    32     %1 = @load_deref (%0) (access=none)
+    32     %2 = deref_var &gl_in (shader_in gl_PerVertex[32])
+    32     %3 = deref_array &(*%2)[%1] (shader_in gl_PerVertex)  // &gl_in[%1]
+    32     %4 = deref_struct &%3->gl_Position (shader_in vec4)  // &gl_in[%1].gl_Position
+    32x4   %5 = @load_deref (%4) (access=none)
+    32     %6 = deref_var &gl_out (shader_out gl_PerVertex[3])
+    32     %7 = deref_array &(*%6)[%1] (shader_out gl_PerVertex)  // &gl_out[%1]
+    32     %8 = deref_struct &%7->gl_Position (shader_out vec4)  // &gl_out[%1].gl_Position
+                @store_deref (%8, %5) (wrmask=xyzw, access=none)
+    32     %9 = deref_var &v_in (shader_in vec4[32])
+    32    %10 = deref_array &(*%9)[%1] (shader_in vec4)  // &v_in[%1]
+    32x4  %11 = @load_deref (%10) (access=none)
+    32    %12 = deref_var &v_out (shader_out vec4[3])
+    32    %13 = deref_array &(*%12)[%1] (shader_out vec4)  // &v_out[%1]
+                @store_deref (%13, %11) (wrmask=xyzw, access=none)
+    32    %14 = load_const (0x00000000)
+    1     %15 = ieq %1, %14 (0x0)
+                // succs: b1 b2
+    if %15 {
+        block b1:   // preds: b0
+        32    %16 = deref_var &gl_TessLevelOuter (shader_out float[4])
+        32    %17 = deref_array &(*%16)[0] (shader_out float)  // &gl_TessLevelOuter[0]
+        32    %18 = load_const (0x3f800000 = 1.000000)
+                    @store_deref (%17, %18 (1.000000)) (wrmask=x, access=none)
+        32    %19 = load_const (0x00000001 = 0.000000)
+        32    %20 = deref_array &(*%16)[1] (shader_out float)  // &gl_TessLevelOuter[1]
+                    @store_deref (%20, %18 (1.000000)) (wrmask=x, access=none)
+        32    %21 = load_const (0x00000002 = 0.000000)
+        32    %22 = deref_array &(*%16)[2] (shader_out float)  // &gl_TessLevelOuter[2]
+                    @store_deref (%22, %18 (1.000000)) (wrmask=x, access=none)
+        32    %23 = deref_var &gl_TessLevelInner (shader_out float[2])
+        32    %24 = deref_array &(*%23)[0] (shader_out float)  // &gl_TessLevelInner[0]
+                    @store_deref (%24, %18 (1.000000)) (wrmask=x, access=none)
+                    // succs: b3
+    } else {
+        block b2:  // preds: b0, succs: b3
+    }
+    block b3:  // preds: b1 b2, succs: b4
+    block b4:
+}
+

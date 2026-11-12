@@ -340,13 +340,25 @@ ninja -C build-mingw src/compiler/spirv/spirv2nir.exe
   - [x] 12.1 FS：`shaders/sysval.frag`：`gl_FragCoord` / `gl_FrontFacing` / `gl_FragDepth`；头打 `origin_upper_left: true`、`depth_layout: 1`（写 depth 时 `FRAG_DEPTH_LAYOUT_ANY`）
   - [x] 12.2 VS：`shaders/sysval.vert`：`gl_VertexIndex` / `gl_InstanceIndex`（`SYSTEM_VALUE_VERTEX_ID` / `SYSTEM_VALUE_INSTANCE_INDEX`）
   - [x] 12.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–11 回归
-- [ ] 13. 插值修饰：`flat` / `noperspective`（`INTERP_MODE_*` 不是 `NONE`）
-- [ ] 14. 几何阶段（整 stage 尚未打到）
-  - [ ] 14.1 GS：`EmitVertex` / `EndPrimitive`，`gl_Position` 写出
-  - [ ] 14.2 TCS / TES：`gl_TessLevel*`、`gl_TessCoord`、patch 变量
-- [ ] 15. 默认 L1 的 `OpPhi`：不加 `--optimize`，SPIR-V 前端把 phi 降成 `function_temp` store/load（与黄金件 6 对照）
-- [ ] 16. `undef` 与未定义 SSA：显式 `nir_undef` 或未写满的 phi 源
-- [ ] 17. `switch` / `continue`：多路分支、循环 `continue`（黄金件 4 只有 if + for-break）
+- [x] 13. 插值修饰：`flat` / `noperspective`（`INTERP_MODE_*` 不是 `NONE`）
+  - [x] 13.1 `shaders/interp.frag`：`flat in vec4` + `noperspective in vec4`
+  - [x] 13.2 `decl_var shader_in INTERP_MODE_FLAT` / `INTERP_MODE_NOPERSPECTIVE`；JSON `interpolation` 同名
+  - [x] 13.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–12 回归
+- [x] 14. 几何阶段（整 stage 尚未打到）
+  - [x] 14.1 GS：`EmitVertex` / `EndPrimitive`，`gl_Position` 写出；头打 `output_primitive` / `input_primitive` / `vertices_out` / `invocations` / `vertices_in` / `active_stream_mask`
+  - [x] 14.2 TCS / TES：`gl_TessLevel*`、`gl_TessCoord`、patch 变量；头打 `primitive_mode` / `tcs_vertices_out` / `spacing`（TES 另有 `ccw`）；`decl_var patch shader_out ... compact`
+  - [x] 14.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–13 回归
+- [x] 15. 默认 L1 的 `OpPhi`：不加 `--optimize`，SPIR-V 前端把 phi 降成 `function_temp` store/load（与黄金件 6 对照）
+  - [x] 15.1 同一份 `shaders/phi.frag.spv`：默认 L1 为 `decl_var function_temp float phi` + then/else `@store_deref` + 合流 `@load_deref`；无 NIR `phi`
+  - [x] 15.2 对照黄金件 6（`--optimize` 保留 `32 %6 = phi b1: %4, b2: %5`）
+  - [x] 15.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–14 回归
+- [x] 16. `undef` 与未定义 SSA：显式 `nir_undef` 或未写满的 phi 源
+  - [x] 16.1 `shaders/undef.frag.spvasm`：`OpUndef` 与输入相加再写出；L1 dump 为 `32 %0 = undefined` 再 `fadd`
+  - [x] 16.2 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–15 回归
+- [x] 17. `switch` / `continue`：多路分支、循环 `continue`（黄金件 4 只有 if + for-break）
+  - [x] 17.1 `shaders/swcont.frag`：`switch` 三路 + `for` 内 `continue`
+  - [x] 17.2 默认 L1：`OpSwitch` 降成 `ieq`/`ult` if 链；GLSL `continue` 降成 `function_temp loop_continue` + 额外 if（`spirv_to_nir` 已跑 `nir_lower_continue_constructs`，无 `continue` jump）
+  - [x] 17.3 Wine：mesa vs ours vs `--from-json`，`diff` 为空；黄金件 1–16 回归
 - [ ] 18. input attachment（subpass FS）：`subpassLoad`、`@load_output` / input attachment deref
 - [ ] 19. 整数 / 转换：`int`/`uint` 算术、`floatBitsToUint` / `bitcast`、8/16/64-bit
 - [ ] 20. UBO 动态索引：`ubo[i].member` 或 `ubo.arr[nonconst]`（黄金件 3 是常量偏移 mat4）

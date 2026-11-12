@@ -42,10 +42,12 @@ struct own_ir_var {
    int location;
    unsigned location_frac;
    unsigned component_mask;
-    unsigned driver_location;
-    unsigned binding;
-    unsigned access;
-    const char *image_format_name;
+     unsigned driver_location;
+     unsigned binding;
+     unsigned access;
+     const char *image_format_name;
+     bool patch;
+     bool compact;
 };
 
 struct own_ir_alu_src {
@@ -251,9 +253,21 @@ struct own_ir_module {
    const char *name;
    uint8_t max_subgroup_size;
    uint8_t min_subgroup_size;
-    bool origin_upper_left;
-    unsigned depth_layout;
-    unsigned workgroup_size[3];
+     bool origin_upper_left;
+     unsigned depth_layout;
+     enum mesa_prim gs_output_primitive;
+     enum mesa_prim gs_input_primitive;
+     uint16_t gs_vertices_out;
+     uint8_t gs_invocations;
+     uint8_t gs_vertices_in;
+     bool gs_uses_end_primitive;
+     uint8_t gs_active_stream_mask;
+     enum tess_primitive_mode tess_primitive_mode;
+     uint8_t tcs_vertices_out;
+     unsigned tess_spacing;
+     bool tess_ccw;
+     bool tess_point_mode;
+     unsigned workgroup_size[3];
    bool workgroup_size_variable;
    const char *mesa_version;
    unsigned num_inputs;
